@@ -16,10 +16,16 @@
 }
 .button-sign-in:hover {
   border-color: transparent;
+  color: #959595;
 }
+
 .button-sign-up {
   background-color: transparent;
   border-color: #ffffff;
+}
+.button-sign-up:hover {
+  border-color: #959595;
+  color: #959595;
 }
 
 .button-sign-in,
@@ -43,7 +49,6 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  margin-right: 15px;
 }
 
 .profile-picture {

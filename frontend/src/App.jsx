@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
@@ -11,7 +16,7 @@ import "./App.css";
 const App = () => {
   return (
     <Router>
-      <Navbar />
+      <ConditionalNavbar />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route element={<AuthRoute isPrivate={false} />}>
@@ -24,6 +29,18 @@ const App = () => {
       </Routes>
     </Router>
   );
+};
+
+// A component to conditionally render the Navbar based on the current route
+const ConditionalNavbar = () => {
+  const location = useLocation();
+  const hideNavbarRoutes = ["/sign-in", "/sign-up"];
+
+  if (hideNavbarRoutes.includes(location.pathname)) {
+    return null;
+  }
+
+  return <Navbar />;
 };
 
 export default App;

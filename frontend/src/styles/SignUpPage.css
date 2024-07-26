@@ -1,0 +1,103 @@
+.page-sign-up {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 70vh;
+  display: flex;
+}
+
+.page-sign-up img {
+  width: 60px;
+  height: 60px;
+}
+
+.sign-up-content {
+  margin: 1.5em;
+  padding: 25px;
+  width: 425px;
+  text-align: left;
+
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  transition: border-color 0.25s;
+}
+
+.sign-up-content h2 {
+  font-size: 2em;
+}
+
+.sign-up-with-email {
+  display: flex;
+  flex-direction: column;
+  margin-top: 1em;
+}
+
+.sign-up-with-email button {
+  border-radius: 15px;
+  background-color: #bbffa4;
+  color: black;
+  transition: background-color 0.25s;
+}
+
+.sign-up-with-email button:hover {
+  background-color: #9ad287;
+}
+
+.sign-up-with-email input {
+  height: 45px;
+  margin-bottom: 1.3em;
+}
+
+/* For both Sign-in and Sign-up */
+
+.separator {
+  width: 100%;
+  text-align: center;
+  border-bottom: 1px solid #ccc;
+  line-height: 0.1em;
+  margin: 20px 0;
+}
+
+.separator span {
+  background: #1a1a1a;
+  padding: 0 10px;
+}
+
+.google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border: 1px solid #4285f4;
+  border-radius: 15px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+  width: 100%;
+  transition: background-color 0.25s;
+}
+
+.google-button:hover {
+  border: 1px solid #4285f4;
+  background-color: #122747;
+}
+
+.google-button .google-logo {
+  margin-right: 10px;
+  font-size: 18px;
+}
+
+.google-button img {
+  width: 25px;
+  height: 25px;
+}
+
+.error-message {
+  color: red;
+}

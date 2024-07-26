@@ -1,0 +1,62 @@
+.page-sign-in {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 70vh;
+  display: flex;
+}
+
+.page-sign-in img {
+  width: 60px;
+  height: 60px;
+}
+
+.sign-in-content {
+  margin: 1.5em;
+  padding: 25px;
+  width: 425px;
+  text-align: left;
+
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  transition: border-color 0.25s;
+}
+
+.sign-in-content h2 {
+  font-size: 2em;
+}
+
+.sign-in-content p {
+  margin-bottom: 1em;
+}
+
+.sign-in-with-email {
+  display: flex;
+  flex-direction: column;
+}
+
+.sign-in-with-email button {
+  border-radius: 15px;
+  background-color: #bbffa4;
+  color: black;
+  margin-bottom: 0.5em;
+  transition: background-color 0.25s;
+}
+
+.sign-in-with-email button:hover {
+  background-color: #9ad287;
+}
+
+.sign-in-with-email input {
+  height: 45px;
+  margin-bottom: 1.3em;
+}
+
+.error-message {
+  color: red;
+}

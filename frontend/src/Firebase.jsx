@@ -1,4 +1,3 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import {
@@ -11,12 +10,9 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import axios from "axios";
-
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { Link } from "react-router-dom";
 
 // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -39,29 +35,31 @@ const signInWithGoogle = async () => {
     const user = result.user;
     await saveUserToDB(user);
   } catch (error) {
-    console.error("Firebase.js > Error during Google sign-in:", error.message);
+    handleAuthError(error, setError);
   }
 };
 
 // Function to handle email/password sign-up
-const signUpWithEmail = async (email, password) => {
+const signUpWithEmail = async (email, password, setError) => {
   try {
     const result = await createUserWithEmailAndPassword(auth, email, password);
     const user = result.user;
     await saveUserToDB(user);
+    setError(null); // Clear any previous errors
   } catch (error) {
-    console.error("Firebase.js > Error during email sign-up:", error.message);
+    handleAuthError(error, setError);
   }
 };
 
 // Function to handle email/password sign-in
-const signInWithEmail = async (email, password) => {
+const signInWithEmail = async (email, password, setError) => {
   try {
     const result = await signInWithEmailAndPassword(auth, email, password);
     const user = result.user;
     await saveUserToDB(user);
+    setError(null);
   } catch (error) {
-    console.error("Firebase.js > Error during email sign-in:", error.message);
+    handleAuthError(error, setError);
   }
 };
 
@@ -90,6 +88,39 @@ const saveUserToDB = async (user) => {
   } catch (error) {
     console.error("Firebase.js > Error saving user to DB:", error.message);
   }
+};
+
+// Function to handle Firebase authentication errors
+const handleAuthError = (error, setError) => {
+  let errorMessage;
+  switch (error.code) {
+    case "auth/invalid-credential":
+      errorMessage = "Wrong password. Try again.";
+      break;
+    case "auth/email-already-in-use":
+      errorMessage = (
+        <span>
+          This account already exists. <Link to="/sign-in">Sign in</Link>
+        </span>
+      );
+      break;
+    case "auth/invalid-email":
+      errorMessage = "The email address is not valid.";
+      break;
+    case "auth/user-disabled":
+      errorMessage =
+        "The user corresponding to the given email has been disabled.";
+      break;
+    case "auth/user-not-found":
+      errorMessage = "There is no user corresponding to the given email.";
+      break;
+    case "auth/wrong-password":
+      errorMessage = "The password is invalid for the given email.";
+      break;
+    default:
+      errorMessage = "Error during authentication: " + error.message;
+  }
+  setError(errorMessage);
 };
 
 export {
