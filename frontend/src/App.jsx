@@ -8,6 +8,8 @@ import {
 import HomePage from "./pages/HomePage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AuthRoute from "./components/AuthRoute";
 import Navbar from "./components/Navbar";
 
@@ -22,6 +24,8 @@ const App = () => {
         <Route element={<AuthRoute isPrivate={false} />}>
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
         <Route element={<AuthRoute isPrivate={true} />}>
           <Route path="/dashboard" element={<HomePage />} />
@@ -34,7 +38,7 @@ const App = () => {
 // A component to conditionally render the Navbar based on the current route
 const ConditionalNavbar = () => {
   const location = useLocation();
-  const hideNavbarRoutes = ["/sign-in", "/sign-up"];
+  const hideNavbarRoutes = ["/sign-in", "/sign-up", "/forgot-password"];
 
   if (hideNavbarRoutes.includes(location.pathname)) {
     return null;

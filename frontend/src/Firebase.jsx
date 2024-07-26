@@ -8,6 +8,8 @@ import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  confirmPasswordReset,
 } from "firebase/auth";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -60,6 +62,23 @@ const signInWithEmail = async (email, password, setError) => {
     setError(null);
   } catch (error) {
     handleAuthError(error, setError);
+  }
+};
+
+// Function to send password reset email
+const resetPasswordWithEmail = async (email) => {
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
+
+const confirmPasswordResetEmail = async (oobCode, newPassword) => {
+  try {
+    await confirmPasswordReset(auth, oobCode, newPassword);
+  } catch (error) {
+    throw new Error(error.message);
   }
 };
 
@@ -130,4 +149,6 @@ export {
   signInWithEmail,
   logout,
   authStateListener,
+  resetPasswordWithEmail,
+  confirmPasswordResetEmail,
 };

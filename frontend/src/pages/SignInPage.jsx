@@ -42,13 +42,15 @@ const SignInPage = () => {
           />
           <button type="submit">Sign In</button>
         </form>
-        <p>Forgot password?</p>
+        <p>
+          <Link to="/forgot-password">Forgot password?</Link>
+        </p>
         <div className="separator">
           <span>or with</span>
         </div>
         <button className="google-button" onClick={signInWithGoogle}>
           <img src={icon_logo_google} alt="logo" className="google-logo" />
-          Sign Up with Google
+          Sign In with Google
         </button>
       </div>
     </div>
