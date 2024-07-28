@@ -1,20 +1,18 @@
+import { Link } from "react-router-dom";
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
 import {
+  confirmPasswordReset,
+  createUserWithEmailAndPassword,
   getAuth,
   GoogleAuthProvider,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
-  onAuthStateChanged,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  sendPasswordResetEmail,
-  confirmPasswordReset,
 } from "firebase/auth";
 import axios from "axios";
-import { Link } from "react-router-dom";
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -25,52 +23,53 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-// Function to handle Google sign-in
-const signInWithGoogle = async () => {
+const authStateListener = (callback) => {
+  onAuthStateChanged(auth, callback);
+};
+
+const signUpWithEmail = async (email, password, setError) => {
+  try {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    const user = result.user;
+    await saveUserToDB(user);
+  } catch (error) {
+    handleAuthError(error, setError);
+    throw error;
+  }
+};
+
+const signInWithEmail = async (email, password, setError) => {
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    const user = result.user;
+    await saveUserToDB(user);
+  } catch (error) {
+    handleAuthError(error, setError);
+    throw error;
+  }
+};
+
+const signInWithGoogle = async (setError) => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
     await saveUserToDB(user);
   } catch (error) {
     handleAuthError(error, setError);
+    throw error;
   }
 };
 
-// Function to handle email/password sign-up
-const signUpWithEmail = async (email, password, setError) => {
-  try {
-    const result = await createUserWithEmailAndPassword(auth, email, password);
-    const user = result.user;
-    await saveUserToDB(user);
-    setError(null); // Clear any previous errors
-  } catch (error) {
-    handleAuthError(error, setError);
-  }
-};
-
-// Function to handle email/password sign-in
-const signInWithEmail = async (email, password, setError) => {
-  try {
-    const result = await signInWithEmailAndPassword(auth, email, password);
-    const user = result.user;
-    await saveUserToDB(user);
-    setError(null);
-  } catch (error) {
-    handleAuthError(error, setError);
-  }
-};
-
-// Function to send password reset email
-const resetPasswordWithEmail = async (email) => {
+const resetPasswordWithEmail = async (email, setError) => {
   try {
     await sendPasswordResetEmail(auth, email);
   } catch (error) {
-    throw new Error(error.message);
+    handleAuthError(error, setError);
+    throw error;
   }
 };
 
@@ -78,38 +77,37 @@ const confirmPasswordResetEmail = async (oobCode, newPassword) => {
   try {
     await confirmPasswordReset(auth, oobCode, newPassword);
   } catch (error) {
-    throw new Error(error.message);
+    handleAuthError(error, setError);
+    throw error;
   }
 };
 
-// Function to handle sign-out
 const logout = async () => {
   try {
     await signOut(auth);
   } catch (error) {
-    console.error("Firebase.js > Error during sign-out:", error.message);
+    console.error("Error during signout:", error.message);
   }
 };
 
-// Function to listen for authentication state changes
-const authStateListener = (callback) => {
-  onAuthStateChanged(auth, callback);
-};
-
-// Function to save user data to MongoDB
 const saveUserToDB = async (user) => {
   try {
     await axios.post("http://localhost:5000/api/users", {
       uid: user.uid,
       email: user.email,
       displayName: user.displayName || "",
+      submittedGettingStarted: false,
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      gender: user.gender || "",
+      ageRange: user.ageRange || "",
+      experience: user.experience || "",
     });
   } catch (error) {
-    console.error("Firebase.js > Error saving user to DB:", error.message);
+    console.error("Erorr saving user to DB:", error.message);
   }
 };
 
-// Function to handle Firebase authentication errors
 const handleAuthError = (error, setError) => {
   let errorMessage;
   switch (error.code) {
@@ -126,6 +124,9 @@ const handleAuthError = (error, setError) => {
     case "auth/invalid-email":
       errorMessage = "The email address is not valid.";
       break;
+    case "auth/missing-password":
+      errorMessage = "Enter a password.";
+      break;
     case "auth/user-disabled":
       errorMessage =
         "The user corresponding to the given email has been disabled.";
@@ -136,19 +137,21 @@ const handleAuthError = (error, setError) => {
     case "auth/wrong-password":
       errorMessage = "The password is invalid for the given email.";
       break;
+    case "auth/popup-closed-by-user":
+      return;
     default:
       errorMessage = "Error during authentication: " + error.message;
   }
   setError(errorMessage);
+  new Error(error.code);
 };
 
 export {
-  auth,
-  signInWithGoogle,
+  authStateListener,
   signUpWithEmail,
   signInWithEmail,
-  logout,
-  authStateListener,
+  signInWithGoogle,
   resetPasswordWithEmail,
   confirmPasswordResetEmail,
+  logout,
 };

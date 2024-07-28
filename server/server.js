@@ -6,19 +6,7 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB
 connectDB();
-
-// var whitelist = ["http://localhost:5173", "http://127.0.0.1:5173"];
-// var corsOptions = {
-//   origin: function (origin, callback) {
-//     if (whitelist.indexOf(origin) !== -1) {
-//       callback(null, true);
-//     } else {
-//       callback(new Error("Not allowed by CORS"));
-//     }
-//   },
-// };
 
 const cors = require("cors");
 const corsOptions = {
@@ -26,28 +14,91 @@ const corsOptions = {
   credentials: true, //access-control-allow-credentials:true
   optionSuccessStatus: 200,
 };
-app.use(cors(corsOptions)); // define this middeware before the all routes as you defined.
-
-// Middleware
-// app.use(cors()); // Enable CORS
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// Route to handle user creation
 app.post("/api/users", async (req, res) => {
-  const { uid, email, displayName } = req.body;
+  const {
+    uid,
+    email,
+    displayName,
+    submittedGettingStarted,
+    firstName,
+    lastName,
+    gender,
+    ageRange,
+    experience,
+  } = req.body;
   try {
     let user = await User.findOne({ uid });
     if (!user) {
-      user = new User({ uid, email, displayName });
+      user = new User({
+        uid,
+        email,
+        displayName,
+        submittedGettingStarted,
+        firstName,
+        lastName,
+        gender,
+        ageRange,
+        experience,
+      });
       await user.save();
     }
-    res.status(201).json(user);
+    res.status(200).json(user);
   } catch (error) {
-    console.error("server.js > Server error:", error.message);
+    console.error("Server error:", error.message);
+    res.status(500).json({ message: "Server error " });
+  }
+});
+
+app.put("/api/users/:uid", async (req, res) => {
+  const { uid } = req.params;
+  const {
+    submittedGettingStarted,
+    firstName,
+    lastName,
+    gender,
+    ageRange,
+    experience,
+  } = req.body;
+
+  try {
+    let user = await User.findOne({ uid });
+    if (user) {
+      user.submittedGettingStarted = submittedGettingStarted;
+      user.firstName = firstName;
+      user.lastName = lastName;
+      user.gender = gender;
+      user.ageRange = ageRange;
+      user.experience = experience;
+      await user.save();
+      res.status(200).json(user);
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    console.error("Server error:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.get("/api/users/:uid", async (req, res) => {
+  const { uid } = req.params;
+
+  try {
+    const user = await User.findOne({ uid });
+    if (user) {
+      res.status(200).json(user);
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    console.error("Server error:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`server.js > Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });

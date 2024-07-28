@@ -1,17 +1,40 @@
-import React, { useState } from "react";
-import { resetPasswordWithEmail } from "../Firebase";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { authStateListener, resetPasswordWithEmail } from "../Firebase";
 import "../styles/ForgotPasswordPage.css";
 
 const ForgotPasswordPage = () => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsubscribe = authStateListener((user) => {
+      setUser(user);
+      setLoading(false);
+    });
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   const handlePasswordReset = async (e) => {
     e.preventDefault();
     try {
-      await resetPasswordWithEmail(email);
+      await resetPasswordWithEmail(email, setError);
       setMessage("Password reset email sent! Check your inbox.");
       setError("");
     } catch (error) {

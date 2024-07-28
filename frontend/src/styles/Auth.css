@@ -1,23 +1,25 @@
+.page-sign-in,
 .page-sign-up {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 70vh;
+  min-height: 80vh;
   display: flex;
 }
 
+.page-sign-in img,
 .page-sign-up img {
   width: 60px;
   height: 60px;
 }
 
+.sign-in-content,
 .sign-up-content {
   margin: 1.5em;
   padding: 25px;
   width: 425px;
   text-align: left;
-
   border-radius: 8px;
   border: 1px solid transparent;
   font-size: 1em;
@@ -27,33 +29,41 @@
   transition: border-color 0.25s;
 }
 
+.sign-in-content h2,
 .sign-up-content h2 {
   font-size: 2em;
 }
 
+.sign-in-content p,
+.sign-up-content p {
+  margin-bottom: 1em;
+}
+
+.sign-in-with-email,
 .sign-up-with-email {
   display: flex;
   flex-direction: column;
-  margin-top: 1em;
 }
 
+.sign-in-with-email button,
 .sign-up-with-email button {
   border-radius: 15px;
   background-color: #bbffa4;
   color: black;
+  margin-bottom: 0.5em;
   transition: background-color 0.25s;
 }
 
+.sign-in-with-email button:hover,
 .sign-up-with-email button:hover {
   background-color: #9ad287;
 }
 
+.sign-in-with-email input,
 .sign-up-with-email input {
   height: 45px;
   margin-bottom: 1.3em;
 }
-
-/* For both Sign-in and Sign-up */
 
 .separator {
   width: 100%;

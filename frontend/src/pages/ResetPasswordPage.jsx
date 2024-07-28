@@ -1,10 +1,11 @@
-// ResetPasswordPage.jsx
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { confirmPasswordResetEmail } from "../Firebase";
+import { authStateListener, confirmPasswordResetEmail } from "../Firebase";
 import "../styles/ResetPasswordPage.css";
 
 const ResetPasswordPage = () => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -12,6 +13,26 @@ const ResetPasswordPage = () => {
   const navigate = useNavigate();
   const query = new URLSearchParams(useLocation().search);
   const oobCode = query.get("oobCode");
+
+  useEffect(() => {
+    const unsubscribe = authStateListener((user) => {
+      setUser(user);
+      setLoading(false);
+    });
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   const handleResetPassword = async (e) => {
     e.preventDefault();

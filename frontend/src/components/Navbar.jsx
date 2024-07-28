@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { logout, authStateListener } from "../Firebase";
 import icon_session from "../assets/session.svg";
@@ -11,13 +11,9 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = authStateListener((user) => {
-      setUser(user);
-    });
+    const unsubscribe = authStateListener((user) => setUser(user));
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
+      if (unsubscribe) unsubscribe();
     };
   }, []);
 
