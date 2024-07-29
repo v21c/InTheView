@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { authStateListener, confirmPasswordResetEmail } from "../Firebase";
-import "../styles/ResetPasswordPage.css";
+import "../styles/ResetPassword.css";
 
-const ResetPasswordPage = () => {
+const ResetPassword = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [newPassword, setNewPassword] = useState("");
@@ -79,4 +79,4 @@ const ResetPasswordPage = () => {
   );
 };
 
-export default ResetPasswordPage;
+export default ResetPassword;

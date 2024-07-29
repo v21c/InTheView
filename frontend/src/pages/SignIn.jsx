@@ -2,19 +2,18 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   authStateListener,
-  signUpWithEmail,
+  signInWithEmail,
   signInWithGoogle,
 } from "../Firebase";
 import icon_logo from "../assets/logo.png";
 import icon_logo_google from "../assets/logo-google.png";
 import "../styles/Auth.css";
 
-const SignUpPage = () => {
+const SignIn = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -38,32 +37,31 @@ const SignUpPage = () => {
     return <div>Loading...</div>;
   }
 
-  const handleSignUp = async (e) => {
+  const handleSignIn = async (e) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
     try {
-      await signUpWithEmail(email, password, setError);
+      await signInWithEmail(email, password, setError);
     } catch (error) {}
   };
 
-  const handleGoogleSignUp = async () => {
+  const handleGoogleSignIn = async () => {
     try {
-      await signInWithGoogle(setError);
+      await signInWithGoogle();
     } catch (error) {}
   };
 
   return (
-    <div className="page-sign-up">
+    <div className="page-sign-in">
       <Link to="/">
         <img src={icon_logo} alt="logo" className="website-logo" />
       </Link>
-      <div className="sign-up-content">
-        <h2>Sign Up</h2>
+      <div className="sign-in-content">
+        <h2>Sign In</h2>
         {error && <p className="error-message">{error}</p>}
-        <form className="sign-up-with-email" onSubmit={handleSignUp} noValidate>
+        <p>
+          Don't have an account yet? <Link to="/sign-up">Sign Up</Link>
+        </p>
+        <form className="sign-in-with-email" onSubmit={handleSignIn} noValidate>
           <input
             type="email"
             onChange={(e) => setEmail(e.target.value)}
@@ -76,24 +74,21 @@ const SignUpPage = () => {
             placeholder="Password"
             required
           />
-          <input
-            type="password"
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirm Password"
-            required
-          />
-          <button type="submit">Sign Up</button>
+          <button type="submit">Sign In</button>
         </form>
+        <p>
+          <Link to="/forgot-password">Forgot password?</Link>
+        </p>
         <div className="separator">
           <span>or with</span>
         </div>
-        <button className="google-button" onClick={handleGoogleSignUp}>
+        <button className="google-button" onClick={handleGoogleSignIn}>
           <img src={icon_logo_google} alt="logo" className="google-logo" />
-          Sign Up with Google
+          Sign In with Google
         </button>
       </div>
     </div>
   );
 };
 
-export default SignUpPage;
+export default SignIn;

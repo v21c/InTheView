@@ -4,7 +4,7 @@ import axios from "axios";
 import { authStateListener } from "../Firebase";
 import Navbar from "../components/Navbar";
 
-const HomePage = () => {
+const Home = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -70,4 +70,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage;
+export default Home;

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authStateListener, resetPasswordWithEmail } from "../Firebase";
-import "../styles/ForgotPasswordPage.css";
+import "../styles/ForgotPassword.css";
 
-const ForgotPasswordPage = () => {
+const ForgotPassword = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
@@ -68,4 +68,4 @@ const ForgotPasswordPage = () => {
   );
 };
 
-export default ForgotPasswordPage;
+export default ForgotPassword;
