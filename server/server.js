@@ -1,6 +1,7 @@
 const express = require("express");
 const connectDB = require("./db");
 const User = require("./models/userModel");
+const sessionController = require("./controllers/sessionController");
 require("dotenv").config();
 
 const app = express();
@@ -28,8 +29,16 @@ app.post("/api/users", async (req, res) => {
     gender,
     ageRange,
     experience,
+    score,
+    userSettings,
+    sessions,
   } = req.body;
+
   try {
+    if (!uid || !email) {
+      throw new Error("UID and Email are required");
+    }
+
     let user = await User.findOne({ uid });
     if (!user) {
       user = new User({
@@ -42,13 +51,28 @@ app.post("/api/users", async (req, res) => {
         gender,
         ageRange,
         experience,
+        score: score
+          ? {
+              averageScore: score.averageScore || 0,
+              totalScore: score.totalScore || [],
+            }
+          : { averageScore: 0, totalScore: [] },
+        userSettings: userSettings
+          ? {
+              notification: {
+                email: userSettings.notification?.email ?? true,
+              },
+              theme: { darkMode: userSettings.theme?.darkMode ?? false },
+            }
+          : { notification: { email: true }, theme: { darkMode: false } },
+        sessions: sessions || [],
       });
       await user.save();
     }
     res.status(200).json(user);
   } catch (error) {
     console.error("Server error:", error.message);
-    res.status(500).json({ message: "Server error " });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -61,6 +85,9 @@ app.put("/api/users/:uid", async (req, res) => {
     gender,
     ageRange,
     experience,
+    score,
+    userSettings,
+    sessions,
   } = req.body;
 
   try {
@@ -72,6 +99,19 @@ app.put("/api/users/:uid", async (req, res) => {
       user.gender = gender;
       user.ageRange = ageRange;
       user.experience = experience;
+      user.score = score
+        ? {
+            averageScore: score.averageScore || 0,
+            totalScore: score.totalScore || [],
+          }
+        : { averageScore: 0, totalScore: [] };
+      user.userSettings = userSettings
+        ? {
+            notification: { email: userSettings.notification?.email ?? true },
+            theme: { darkMode: userSettings.theme?.darkMode ?? false },
+          }
+        : { notification: { email: true }, theme: { darkMode: false } };
+      user.sessions = sessions || [];
       await user.save();
       res.status(200).json(user);
     } else {
@@ -98,6 +138,11 @@ app.get("/api/users/:uid", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+app.post("/api/sessions", sessionController.createSession);
+app.get("/api/sessions/:sessionid", sessionController.getSessionDetails);
+app.post("/api/messages", sessionController.createMessage);
+app.get("/api/messages/:messageid", sessionController.getMessages);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

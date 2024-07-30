@@ -92,6 +92,8 @@ const logout = async () => {
 
 const saveUserToDB = async (user) => {
   try {
+    if (!user) throw new Error("User object is undefined");
+
     await axios.post("http://localhost:5000/api/users", {
       uid: user.uid,
       email: user.email,
@@ -102,9 +104,24 @@ const saveUserToDB = async (user) => {
       gender: user.gender || "",
       ageRange: user.ageRange || "",
       experience: user.experience || "",
+      score: user.score
+        ? {
+            averageScore: user.score.averageScore || 0,
+            totalScore: user.score.totalScore || [],
+          }
+        : { averageScore: 0, totalScore: [] },
+      userSettings: user.userSettings
+        ? {
+            notification: {
+              email: user.userSettings.notification?.email ?? true,
+            },
+            theme: { darkMode: user.userSettings.theme?.darkMode ?? false },
+          }
+        : { notification: { email: true }, theme: { darkMode: false } },
+      sessions: user.sessions || [],
     });
   } catch (error) {
-    console.error("Erorr saving user to DB:", error.message);
+    console.error("Error saving user to DB:", error.message);
   }
 };
 
