@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { authStateListener } from "../Firebase";
 import Navbar from "../components/Navbar";
+import Interview from "./Interview";
 
 const Home = () => {
   const [user, setUser] = useState(null);
@@ -59,6 +60,7 @@ const Home = () => {
       {user ? (
         <div>
           <h1>안녕하세요, {`${firstName} ${lastName}` || user.email}님</h1>
+          <Interview />
         </div>
       ) : (
         <div>
