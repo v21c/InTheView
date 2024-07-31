@@ -2,9 +2,19 @@ const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema(
   {
-    uid: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true },
-    displayName: { type: String },
+    uid: { 
+      type: String, 
+      required: true, 
+      unique: true, 
+      index: true 
+    },
+    email: { 
+      type: String,
+      required: true, 
+      unique: true, 
+      index: true 
+    },
+    displayName: { type: String }, 
     submittedGettingStarted: { type: Boolean },
     firstName: { type: String },
     lastName: { type: String },
@@ -27,6 +37,8 @@ const UserSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+UserSchema.index({ email: 1, createdAt: -1 });
 
 const User = mongoose.model("User", UserSchema);
 module.exports = User;
