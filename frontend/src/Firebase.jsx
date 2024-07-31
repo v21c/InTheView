@@ -103,6 +103,7 @@ const saveUserToDB = async (user) => {
       lastName: user.lastName || "",
       gender: user.gender || "",
       ageRange: user.ageRange || "",
+      occupation: user.occupation || "",
       experience: user.experience || "",
       score: user.score
         ? {

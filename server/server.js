@@ -1,6 +1,8 @@
 const express = require("express");
 const connectDB = require("./db");
 const User = require("./models/userModel");
+const Session = require("./models/sessionModel");
+const Message = require("./models/messageModel");
 const sessionController = require("./controllers/sessionController");
 require("dotenv").config();
 
@@ -28,6 +30,7 @@ app.post("/api/users", async (req, res) => {
     lastName,
     gender,
     ageRange,
+    occupation,
     experience,
     score,
     userSettings,
@@ -49,6 +52,7 @@ app.post("/api/users", async (req, res) => {
         lastName,
         gender,
         ageRange,
+        occupation,
         experience,
         score: score
           ? {
@@ -82,6 +86,7 @@ app.put("/api/users/:uid", async (req, res) => {
     lastName,
     gender,
     ageRange,
+    occupation,
     experience,
     score,
     userSettings,
@@ -95,6 +100,7 @@ app.put("/api/users/:uid", async (req, res) => {
       user.lastName = lastName;
       user.gender = gender;
       user.ageRange = ageRange;
+      user.occupation = occupation;
       user.experience = experience;
       user.score = score
         ? {
@@ -135,10 +141,77 @@ app.get("/api/users/:uid", async (req, res) => {
   }
 });
 
-app.post("/api/sessions", sessionController.createSession);
-app.get("/api/sessions/:sessionid", sessionController.getSessionDetails);
-app.post("/api/messages", sessionController.createMessage);
-app.get("/api/messages/:messageid", sessionController.getMessages);
+app.get("/api/sessions", async (req, res) => {
+  const userId = req.query.userId;
+  try {
+    const sessions = await Session.find({ userId });
+    res.json(sessions);
+  } catch (error) {
+    console.error("Error fetching sessions:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.post("/api/sessions", async (req, res) => {
+  const { userId, sessionName, sessionPurpose, sessionScore, sessionFeedback } =
+    req.body;
+
+  try {
+    const newSession = new Session({
+      userId,
+      sessionName,
+      sessionPurpose,
+      sessionScore,
+      sessionFeedback,
+    });
+
+    await newSession.save();
+    res.status(201).json(newSession);
+  } catch (error) {
+    console.error("Error creating session:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.get("/api/messages", async (req, res) => {
+  const sessionId = req.query.sessionId;
+
+  if (!sessionId) {
+    return res.status(400).json({ message: "Session ID is required" });
+  }
+
+  try {
+    const messages = await Message.find({ sessionId });
+    res.json(messages);
+  } catch (error) {
+    console.error(`Error fetching messages for session ${sessionId}:`, error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.post("/api/messages", async (req, res) => {
+  const { sessionId, question, answer, messageScore } = req.body;
+
+  try {
+    const newMessage = new Message({
+      sessionId,
+      question,
+      answer,
+      messageScore,
+    });
+
+    await newMessage.save();
+    res.status(201).json(newMessage);
+  } catch (error) {
+    console.error("Error creating message:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// app.post("/api/sessions", sessionController.createSession);
+// app.get("/api/sessions/:sessionid", sessionController.getSessionDetails);
+// app.post("/api/messages", sessionController.createMessage);
+// app.get("/api/messages/:messageid", sessionController.getMessages);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

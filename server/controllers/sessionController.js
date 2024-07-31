@@ -2,9 +2,16 @@ const Session = require("../models/sessionModel");
 const Message = require("../models/messageModel");
 
 exports.createSession = async (req, res) => {
-  const { uid, script, score, request, feedback } = req.body;
+  const { uid, sessionName, sessionPurpose, sessionScore, sessionFeedback } =
+    req.body;
   try {
-    const session = new Session({ uid, script, score, request, feedback });
+    const session = new Session({
+      userId: uid,
+      sessionName,
+      sessionPurpose,
+      sessionScore,
+      sessionFeedback,
+    });
     await session.save();
     res.status(200).json(session);
   } catch (error) {
@@ -14,14 +21,14 @@ exports.createSession = async (req, res) => {
 };
 
 exports.getSessionDetails = async (req, res) => {
-  const { uid } = req.params;
+  const { sessionid } = req.params;
   try {
-    const session = await Session.findOne({ uid });
+    const session = await Session.findById(sessionid);
     if (!session) {
       return res.status(404).json({ message: "Session not found" });
     }
 
-    res.status(200).json({ session });
+    res.status(200).json(session);
   } catch (error) {
     console.error("Server error:", error.message);
     res.status(500).json({ message: "Server error" });
