@@ -5,6 +5,10 @@ const Session = require("./models/sessionModel");
 const Message = require("./models/messageModel");
 const sessionController = require("./controllers/sessionController");
 const OpenAI = require("openai");
+const multer = require("multer");
+const fs = require("fs");
+const { exec } = require("child_process");
+const util = require("util");
 require("dotenv").config();
 
 const app = express();
@@ -24,6 +28,10 @@ app.use(express.json());
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+const upload = multer({ dest: "uploads/" });
+
+const execPromise = util.promisify(exec);
 
 app.post("/api/users", async (req, res) => {
   const {
@@ -259,6 +267,36 @@ app.put("/api/messages/:messageId", async (req, res) => {
   } catch (error) {
     console.error("Error updating message:", error);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+// New route for speech-to-text
+app.post("/api/speech-to-text", upload.single("audio"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "No audio file uploaded" });
+  }
+
+  const inputPath = req.file.path;
+  const outputPath = `${inputPath}.wav`;
+
+  try {
+    // Convert WebM to WAV using FFmpeg
+    await execPromise(`ffmpeg -i ${inputPath} ${outputPath}`);
+
+    const audioFile = fs.createReadStream(outputPath);
+    const transcript = await openai.audio.transcriptions.create({
+      file: audioFile,
+      model: "whisper-1",
+    });
+
+    // Delete temporary files
+    fs.unlinkSync(inputPath);
+    fs.unlinkSync(outputPath);
+
+    res.json({ text: transcript.text });
+  } catch (error) {
+    console.error("Error transcribing audio:", error);
+    res.status(500).json({ error: "Error transcribing audio" });
   }
 });
 

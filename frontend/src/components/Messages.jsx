@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
 const Messages = ({ user, selectedSession }) => {
@@ -6,6 +6,10 @@ const Messages = ({ user, selectedSession }) => {
   const [averageScore, setAverageScore] = useState(0);
   const [messages, setMessages] = useState([]);
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const [shouldSubmit, setShouldSubmit] = useState(false);
 
   useEffect(() => {
     if (selectedSession) {
@@ -78,7 +82,7 @@ const Messages = ({ user, selectedSession }) => {
         }
       );
       console.log("Message updated:", response.data);
-      fetchMessages(selectedSession);
+      await fetchMessages(selectedSession);
     } catch (error) {
       console.error("Error updating message:", error);
     }
@@ -87,12 +91,18 @@ const Messages = ({ user, selectedSession }) => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!userInput || !selectedSession || !currentQuestionId) return;
+    if (!userInput.trim() || !selectedSession || !currentQuestionId) {
+      return;
+    }
 
-    await updateMessage(currentQuestionId, userInput);
-    setUserInput("");
-
-    await handleGenerateQuestion();
+    try {
+      await updateMessage(currentQuestionId, userInput);
+      setUserInput("");
+      console.log("Message updated successfully");
+      await handleGenerateQuestion();
+    } catch (error) {
+      console.error("Error in handleSubmit:", error);
+    }
   };
 
   const startInterview = async () => {
@@ -100,6 +110,99 @@ const Messages = ({ user, selectedSession }) => {
 
     await handleGenerateQuestion();
   };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream, {
+        mimeType: "audio/webm",
+      });
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
+        await processAudio(audioBlob);
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const processAudio = async (audioBlob) => {
+    try {
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "recording.webm");
+
+      const response = await axios.post(
+        "http://localhost:5000/api/speech-to-text",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+
+      const transcribedText = response.data.text;
+      setUserInput(transcribedText);
+
+      // Set flag to indicate that the form should be submitted
+      setShouldSubmit(true);
+    } catch (error) {
+      console.error("Error processing audio:", error);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.code === "Space" && !isRecording) {
+        // Only start recording if the focus is not on the input field
+        if (document.activeElement.tagName !== "INPUT") {
+          event.preventDefault();
+          startRecording();
+        }
+      }
+    };
+
+    const handleKeyUp = (event) => {
+      if (event.code === "Space" && isRecording) {
+        event.preventDefault();
+        stopRecording();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [isRecording]);
+
+  // useEffect(() => {
+  //   if (shouldSubmit) {
+  //     // Only submit if there is user input
+  //     if (userInput.trim()) {
+  //       handleSubmit(new Event("submit"));
+  //     }
+  //     setShouldSubmit(false);
+  //   }
+  // }, [shouldSubmit, userInput]);
 
   return (
     <div className="chat-container">
@@ -126,10 +229,13 @@ const Messages = ({ user, selectedSession }) => {
                 type="text"
                 value={userInput}
                 onChange={(e) => setUserInput(e.target.value)}
-                placeholder="Enter your message..."
+                placeholder="Enter your message or press space to record..."
               />
               <button type="submit">Submit Message</button>
             </form>
+            <div className="recording-status">
+              {isRecording ? "Recording..." : "Press and hold space to record"}
+            </div>
           </>
         )}
       </div>

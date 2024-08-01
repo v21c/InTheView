@@ -21,6 +21,11 @@ const Sessions = ({ user, setSelectedSession }) => {
   };
 
   const createSession = async () => {
+    if (newSessionName.trim() === "") {
+      // alert("Session name cannot be empty.");
+      return;
+    }
+
     try {
       const response = await axios.post("http://localhost:5000/api/sessions", {
         userId: user.uid,
