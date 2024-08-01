@@ -2,11 +2,6 @@ const mongoose = require("mongoose");
 
 const SessionSchema = new mongoose.Schema(
   {
-    // userId: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   required: true,
-    //   ref: "User",
-    // },
     userId: { type: String, required: true },
     sessionName: { type: String },
     sessionPurpose: { type: String },

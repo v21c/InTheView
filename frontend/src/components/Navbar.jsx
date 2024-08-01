@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { logout, authStateListener } from "../Firebase";
+import Sessions from "./Sessions";
 import icon_session from "../assets/session.svg";
 import icon_logo from "../assets/logo.png";
 import "../styles/Navbar.css";
 
-const Navbar = () => {
+const Navbar = ({ setSelectedSession }) => {
   const [user, setUser] = useState(null);
   const [showSessions, setShowSessions] = useState(false);
   const navigate = useNavigate();
@@ -81,11 +82,7 @@ const Navbar = () => {
             </button>
           </div>
           <div className="sessions-content">
-            <ul>
-              <li>Session 1</li>
-              <li>Session 2</li>
-              <li>Session 3</li>
-            </ul>
+            <Sessions user={user} setSelectedSession={setSelectedSession} />
           </div>
         </div>
       )}

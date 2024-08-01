@@ -4,6 +4,7 @@ const User = require("./models/userModel");
 const Session = require("./models/sessionModel");
 const Message = require("./models/messageModel");
 const sessionController = require("./controllers/sessionController");
+const OpenAI = require("openai");
 require("dotenv").config();
 
 const app = express();
@@ -19,6 +20,10 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.use(express.json());
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 app.post("/api/users", async (req, res) => {
   const {
@@ -144,7 +149,7 @@ app.get("/api/users/:uid", async (req, res) => {
 app.get("/api/sessions", async (req, res) => {
   const userId = req.query.userId;
   try {
-    const sessions = await Session.find({ userId });
+    const sessions = await Session.find({ userId }).sort({ createdAt: -1 });
     res.json(sessions);
   } catch (error) {
     console.error("Error fetching sessions:", error);
@@ -208,10 +213,54 @@ app.post("/api/messages", async (req, res) => {
   }
 });
 
-// app.post("/api/sessions", sessionController.createSession);
-// app.get("/api/sessions/:sessionid", sessionController.getSessionDetails);
-// app.post("/api/messages", sessionController.createMessage);
-// app.get("/api/messages/:messageid", sessionController.getMessages);
+app.get("/api/generate-question", async (req, res) => {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an interviewer who tests technical and behavioral skills. Generate a question.",
+        },
+        {
+          role: "user",
+          content:
+            "Based on the following questions and answers for ICT professionals who are Male and NEW to experience. Generate a new, relevant question about career development, industry trends, or challenges faced by this group. The question should be inspired by the themes and insights present in the previous questions and answers, and should follow naturally from the previous answer.For example, if the previous question was about self-development and the answer was about reading books, the next question could be about what books they have recently read. The question should be in Korean.",
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 64,
+      top_p: 1,
+    });
+    const question = response.choices[0];
+    res.json({ question });
+  } catch (error) {
+    console.error("Error generating question:", error);
+    res.status(500).json({ error: "Error generating question" });
+  }
+});
+
+app.put("/api/messages/:messageId", async (req, res) => {
+  const { messageId } = req.params;
+  const { answer } = req.body;
+
+  try {
+    const message = await Message.findById(messageId);
+
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    message.answer = answer;
+    await message.save();
+
+    res.status(200).json(message);
+  } catch (error) {
+    console.error("Error updating message:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
