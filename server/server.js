@@ -186,6 +186,44 @@ app.post("/api/sessions", async (req, res) => {
   }
 });
 
+app.put("/api/sessions/:sessionId", async (req, res) => {
+  const { sessionId } = req.params;
+  const { sessionName } = req.body;
+
+  try {
+    const session = await Session.findById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    session.sessionName = sessionName;
+    await session.save();
+
+    res.json(session);
+  } catch (error) {
+    console.error("Error updating session:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.delete("/api/sessions/:sessionId", async (req, res) => {
+  const { sessionId } = req.params;
+
+  try {
+    const session = await Session.findByIdAndDelete(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    res.status(200).json({ message: "Session deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting session:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 app.get("/api/messages", async (req, res) => {
   const sessionId = req.query.sessionId;
 
@@ -270,7 +308,6 @@ app.put("/api/messages/:messageId", async (req, res) => {
   }
 });
 
-// New route for speech-to-text
 app.post("/api/speech-to-text", upload.single("audio"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No audio file uploaded" });
@@ -280,7 +317,6 @@ app.post("/api/speech-to-text", upload.single("audio"), async (req, res) => {
   const outputPath = `${inputPath}.wav`;
 
   try {
-    // Convert WebM to WAV using FFmpeg
     await execPromise(`ffmpeg -i ${inputPath} ${outputPath}`);
 
     const audioFile = fs.createReadStream(outputPath);
@@ -289,7 +325,6 @@ app.post("/api/speech-to-text", upload.single("audio"), async (req, res) => {
       model: "whisper-1",
     });
 
-    // Delete temporary files
     fs.unlinkSync(inputPath);
     fs.unlinkSync(outputPath);
 

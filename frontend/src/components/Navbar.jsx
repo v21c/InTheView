@@ -75,16 +75,12 @@ const Navbar = ({ setSelectedSession }) => {
         </div>
       </nav>
       {user && (
-        <div className={`sessions-list ${showSessions ? "open" : ""}`}>
-          <div className="sessions-toggle">
-            <button className="button-toggle" onClick={toggleSessions}>
-              <img src={icon_session} alt="session" />
-            </button>
-          </div>
-          <div className="sessions-content">
-            <Sessions user={user} setSelectedSession={setSelectedSession} />
-          </div>
-        </div>
+        <Sessions
+          user={user}
+          setSelectedSession={setSelectedSession}
+          showSessions={showSessions}
+          toggleSessions={toggleSessions}
+        />
       )}
     </div>
   );
