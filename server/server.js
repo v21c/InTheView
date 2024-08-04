@@ -2,6 +2,7 @@ const express = require("express");
 const connectDB = require("./db");
 const User = require("./models/userModel");
 const sessionController = require("./controllers/sessionController");
+const { generateFeedbackRequest, getFeedback } = require('./feedbackService');
 require("dotenv").config();
 
 const app = express();
@@ -143,6 +144,37 @@ app.post("/api/sessions", sessionController.createSession);
 app.get("/api/sessions/:sessionid", sessionController.getSessionDetails);
 app.post("/api/messages", sessionController.createMessage);
 app.get("/api/messages/:messageid", sessionController.getMessages);
+
+app.post("/api/feedback", async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    const user = await User.findById(userId);
+    if (user) {
+      res.status(200).json(user);
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+
+    const requestId = await generateFeedbackRequest(user);
+    res.status(201).json({ requestId });
+  } catch(error) {
+    console.error("Error generating feedback request:", error);
+    res.status(500).json({ message: "Error generating feedback request" });
+  }
+})
+
+app.get("/api/feedback/requestId", async (req, res) => {
+  try {
+    const { requestId } = req.params;
+
+    const feedback = await getFeedback(requestId);
+    res.status(200).json(feedback)
+  } catch(error) {
+    console.error("Error getting feedback:", error);
+    res.status(500).json({ message: "Error getting feedback" });
+  }
+})
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

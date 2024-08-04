@@ -33,7 +33,6 @@ const UserSchema = new mongoose.Schema(
         darkMode: { type: Boolean, default: false },
       },
     },
-    sessions: [{ type: mongoose.Schema.Types.ObjectId, ref: "Session" }],
   },
   { timestamps: true }
 );

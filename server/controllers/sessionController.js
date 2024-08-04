@@ -1,10 +1,18 @@
+const mongoose = require('mongoose');
 const Session = require("../models/sessionModel");
 const Message = require("../models/messageModel");
 
 exports.createSession = async (req, res) => {
-  const { uid, script, score, request, feedback } = req.body;
+  const { userId, sessionName, sessionDemand, sessionScore, sessionFeedback, messages } = req.body;
   try {
-    const session = new Session({ uid, script, score, request, feedback });
+    const session = new Session({ 
+      userId, 
+      sessionName, 
+      sessionDemand, 
+      sessionScore, 
+      sessionFeedback, 
+      messages 
+    });
     await session.save();
     res.status(200).json(session);
   } catch (error) {
@@ -12,6 +20,7 @@ exports.createSession = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 exports.getSessionDetails = async (req, res) => {
   const { uid } = req.params;
@@ -28,10 +37,21 @@ exports.getSessionDetails = async (req, res) => {
   }
 };
 
+
 exports.createMessage = async (req, res) => {
-  const { sessionid, time, messages } = req.body;
+  const { sessionId, messageId, question, answer, messageScore, time } = req.body;
   try {
-    const message = new Message({ sessionid, time, messages });
+    // sessionId를 ObjectId로 변환
+    const sessionObjectId = new mongoose.Types.ObjectId(sessionId);
+
+    const message = new Message({ 
+      sessionId: sessionObjectId,
+      messageId, 
+      question, 
+      answer, 
+      messageScore, 
+      time: time ? new Date(time) : new Date(),
+    });
     await message.save();
     res.status(201).json(message);
   } catch (error) {
@@ -39,6 +59,7 @@ exports.createMessage = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 exports.getMessages = async (req, res) => {
   const { sessionid } = req.params;
