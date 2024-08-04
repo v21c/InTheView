@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import "../styles/Messages.css";
 
 const Messages = ({ user, selectedSession }) => {
   const [userInput, setUserInput] = useState("");
@@ -90,11 +91,9 @@ const Messages = ({ user, selectedSession }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
     if (!userInput.trim() || !selectedSession || !currentQuestionId) {
       return;
     }
-
     try {
       await updateMessage(currentQuestionId, userInput);
       setUserInput("");
@@ -107,7 +106,6 @@ const Messages = ({ user, selectedSession }) => {
 
   const startInterview = async () => {
     if (!selectedSession) return;
-
     await handleGenerateQuestion();
   };
 
@@ -148,7 +146,6 @@ const Messages = ({ user, selectedSession }) => {
     try {
       const formData = new FormData();
       formData.append("audio", audioBlob, "recording.webm");
-
       const response = await axios.post(
         "http://localhost:5000/api/speech-to-text",
         formData,
@@ -156,11 +153,8 @@ const Messages = ({ user, selectedSession }) => {
           headers: { "Content-Type": "multipart/form-data" },
         }
       );
-
       const transcribedText = response.data.text;
       setUserInput(transcribedText);
-
-      // Set flag to indicate that the form should be submitted
       setShouldSubmit(true);
     } catch (error) {
       console.error("Error processing audio:", error);
@@ -170,33 +164,29 @@ const Messages = ({ user, selectedSession }) => {
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.code === "Space" && !isRecording) {
-        // Only start recording if the focus is not on the input field
         if (document.activeElement.tagName !== "INPUT") {
           event.preventDefault();
           startRecording();
         }
       }
     };
-
     const handleKeyUp = (event) => {
       if (event.code === "Space" && isRecording) {
         event.preventDefault();
         stopRecording();
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
-
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
   }, [isRecording]);
 
+  // Submit right after processAudio
   // useEffect(() => {
   //   if (shouldSubmit) {
-  //     // Only submit if there is user input
   //     if (userInput.trim()) {
   //       handleSubmit(new Event("submit"));
   //     }
