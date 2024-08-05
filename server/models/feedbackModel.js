@@ -17,11 +17,7 @@ const FeedbackRequestSchema = new mongoose.Schema({
     sessionDemand: String,
     sessionScore: Number,
     messages: [{
-      messageId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Message',
-        required: true
-      },
+      messageId: String,
       question: String,
       answer: String,
       messageScore: Number,
