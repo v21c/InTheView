@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "../styles/Messages.css";
 
@@ -8,14 +8,30 @@ const Messages = ({ user, selectedSession }) => {
   const [messages, setMessages] = useState([]);
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [sessionPurpose, setSessionPurpose] = useState("");
+  const [sessionStarted, setSessionStarted] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const [shouldSubmit, setShouldSubmit] = useState(false);
 
   useEffect(() => {
-    if (selectedSession) {
-      fetchMessages(selectedSession);
-    }
+    const fetchSessionDetails = async () => {
+      if (selectedSession) {
+        try {
+          const response = await axios.get(
+            `http://localhost:5000/api/sessions/${selectedSession}`
+          );
+          const session = response.data;
+          setSessionStarted(session.sessionStarted);
+          setSessionPurpose(session.sessionPurpose || "");
+          setMessages(await fetchMessages(selectedSession));
+        } catch (error) {
+          console.error(`Error fetching session details:`, error);
+        }
+      }
+    };
+
+    fetchSessionDetails();
   }, [selectedSession]);
 
   const fetchMessages = async (sessionId) => {
@@ -23,9 +39,10 @@ const Messages = ({ user, selectedSession }) => {
       const response = await axios.get("http://localhost:5000/api/messages", {
         params: { sessionId },
       });
-      setMessages(response.data);
+      return response.data;
     } catch (error) {
       console.error(`Error fetching messages for session ${sessionId}:`, error);
+      return [];
     }
   };
 
@@ -34,10 +51,7 @@ const Messages = ({ user, selectedSession }) => {
 
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/generate-question",
-        {
-          params: { userId: user.uid },
-        }
+        "http://localhost:5000/api/generate-question"
       );
       const question = response.data.question.message.content;
 
@@ -78,12 +92,10 @@ const Messages = ({ user, selectedSession }) => {
     try {
       const response = await axios.put(
         `http://localhost:5000/api/messages/${messageId}`,
-        {
-          answer,
-        }
+        { answer }
       );
       console.log("Message updated:", response.data);
-      await fetchMessages(selectedSession);
+      setMessages(await fetchMessages(selectedSession));
     } catch (error) {
       console.error("Error updating message:", error);
     }
@@ -106,6 +118,17 @@ const Messages = ({ user, selectedSession }) => {
 
   const startInterview = async () => {
     if (!selectedSession) return;
+
+    try {
+      await axios.put(`http://localhost:5000/api/sessions/${selectedSession}`, {
+        sessionStarted: true,
+        sessionPurpose, // Update session purpose on server
+      });
+      setSessionStarted(true);
+    } catch (error) {
+      console.error("Error updating session:", error);
+    }
+
     await handleGenerateQuestion();
   };
 
@@ -197,35 +220,49 @@ const Messages = ({ user, selectedSession }) => {
   return (
     <div className="chat-container">
       <div className="messages-container">
-        <button onClick={startInterview} disabled={!selectedSession}>
-          Start Interview
-        </button>
-        <h2>Messages</h2>
-        {selectedSession && (
+        {!sessionStarted && (
           <>
-            <div className="selected-session">
-              Selected Session: {selectedSession}
-            </div>
-            {/* TODO
-            <div className="average-score">Average Score: {averageScore}</div> */}
-            {messages.map((message) => (
-              <div key={message._id} className="message">
-                <div className="message-question">{message.question}</div>
-                <div className="message-answer">{message.answer}</div>
-              </div>
-            ))}
-            <form onSubmit={handleSubmit}>
-              <input
-                type="text"
-                value={userInput}
-                onChange={(e) => setUserInput(e.target.value)}
-                placeholder="Enter your message or press space to record..."
-              />
-              <button type="submit">Submit Message</button>
-            </form>
-            <div className="recording-status">
-              {isRecording ? "Recording..." : "Press and hold space to record"}
-            </div>
+            <input
+              type="text"
+              value={sessionPurpose}
+              onChange={(e) => setSessionPurpose(e.target.value)}
+              placeholder="Enter session purpose..."
+            />
+            <button onClick={startInterview} disabled={!selectedSession}>
+              Start Interview
+            </button>
+          </>
+        )}
+        {sessionStarted && (
+          <>
+            <h2>Messages</h2>
+            {selectedSession && (
+              <>
+                <div className="selected-session">
+                  Selected Session: {selectedSession}
+                </div>
+                {messages.map((message) => (
+                  <div key={message._id} className="message">
+                    <div className="message-question">{message.question}</div>
+                    <div className="message-answer">{message.answer}</div>
+                  </div>
+                ))}
+                <form onSubmit={handleSubmit}>
+                  <input
+                    type="text"
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    placeholder="Enter your message or press space to record..."
+                  />
+                  <button type="submit">Submit Message</button>
+                </form>
+                <div className="recording-status">
+                  {isRecording
+                    ? "Recording..."
+                    : "Press and hold space to record"}
+                </div>
+              </>
+            )}
           </>
         )}
       </div>

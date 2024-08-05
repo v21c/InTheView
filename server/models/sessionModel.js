@@ -4,6 +4,7 @@ const SessionSchema = new mongoose.Schema(
   {
     userId: { type: String, required: true },
     sessionName: { type: String },
+    sessionStarted: { type: Boolean },
     sessionPurpose: { type: String },
     sessionScore: { type: Number },
     sessionFeedback: { type: String },

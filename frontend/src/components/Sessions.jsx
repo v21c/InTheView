@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import icon_session from "../assets/session.svg";
 import icon_add_session from "../assets/add-session.svg";
@@ -80,6 +80,7 @@ const Sessions = ({
       const response = await axios.post("http://localhost:5000/api/sessions", {
         userId: user.uid,
         sessionName: "New session",
+        sessionStarted: false,
         sessionPurpose: "",
         sessionScore: 0,
         sessionFeedback: "",

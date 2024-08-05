@@ -166,13 +166,20 @@ app.get("/api/sessions", async (req, res) => {
 });
 
 app.post("/api/sessions", async (req, res) => {
-  const { userId, sessionName, sessionPurpose, sessionScore, sessionFeedback } =
-    req.body;
+  const {
+    userId,
+    sessionName,
+    sessionStarted,
+    sessionPurpose,
+    sessionScore,
+    sessionFeedback,
+  } = req.body;
 
   try {
     const newSession = new Session({
       userId,
       sessionName,
+      sessionStarted,
       sessionPurpose,
       sessionScore,
       sessionFeedback,
@@ -188,7 +195,7 @@ app.post("/api/sessions", async (req, res) => {
 
 app.put("/api/sessions/:sessionId", async (req, res) => {
   const { sessionId } = req.params;
-  const { sessionName } = req.body;
+  const { sessionName, sessionStarted, sessionPurpose } = req.body;
 
   try {
     const session = await Session.findById(sessionId);
@@ -197,12 +204,31 @@ app.put("/api/sessions/:sessionId", async (req, res) => {
       return res.status(404).json({ message: "Session not found" });
     }
 
-    session.sessionName = sessionName;
+    session.sessionName = sessionName || session.sessionName;
+    session.sessionStarted =
+      sessionStarted !== undefined ? sessionStarted : session.sessionStarted;
+    session.sessionPurpose = sessionPurpose || session.sessionPurpose; // Updated session purpose
     await session.save();
 
     res.json(session);
   } catch (error) {
     console.error("Error updating session:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.get("/api/sessions/:sessionId", async (req, res) => {
+  const { sessionId } = req.params;
+
+  try {
+    const session = await Session.findById(sessionId);
+    if (session) {
+      res.status(200).json(session);
+    } else {
+      res.status(404).json({ message: "Session not found" });
+    }
+  } catch (error) {
+    console.error("Server error:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 });

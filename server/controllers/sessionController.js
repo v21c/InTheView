@@ -2,12 +2,19 @@ const Session = require("../models/sessionModel");
 const Message = require("../models/messageModel");
 
 exports.createSession = async (req, res) => {
-  const { uid, sessionName, sessionPurpose, sessionScore, sessionFeedback } =
-    req.body;
+  const {
+    uid,
+    sessionName,
+    sessionStarted,
+    sessionPurpose,
+    sessionScore,
+    sessionFeedback,
+  } = req.body;
   try {
     const session = new Session({
       userId: uid,
       sessionName,
+      sessionStarted,
       sessionPurpose,
       sessionScore,
       sessionFeedback,

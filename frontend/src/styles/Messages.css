@@ -1,11 +1,14 @@
 .chat-container {
   display: flex;
   justify-content: center;
+  /* align-items: flex-end;
+  height: calc(100vh - 60px); */
 }
 
 .messages-container {
   width: 100%;
   max-width: 800px;
+  /* margin-bottom: 20px; */
 }
 
 .message {
