@@ -41,16 +41,13 @@ exports.getSessionDetails = async (req, res) => {
 exports.createMessage = async (req, res) => {
   const { sessionId, messageId, question, answer, messageScore, time } = req.body;
   try {
-    // sessionId를 ObjectId로 변환
-    const sessionObjectId = new mongoose.Types.ObjectId(sessionId);
-
     const message = new Message({ 
-      sessionId: sessionObjectId,
+      sessionId,
       messageId, 
       question, 
       answer, 
       messageScore, 
-      time: time ? new Date(time) : new Date(),
+      time,
     });
     await message.save();
     res.status(201).json(message);
@@ -60,11 +57,10 @@ exports.createMessage = async (req, res) => {
   }
 };
 
-
 exports.getMessages = async (req, res) => {
   const { sessionid } = req.params;
   try {
-    const message = await Message.findOne({ sessionid });
+    const message = await Message.find({ sessionid });
     res.status(200).json(message);
   } catch (error) {
     console.error("Server error:", error.message);

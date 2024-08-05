@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const User = require('./models/userModel');
 const Session = require('./models/sessionModel');
 const Message = require('./models/messageModel');
@@ -8,11 +9,10 @@ const REQUIRED_SESSIONS_COUNT = 3;
 // 피드백 생성 요청
 async function generateFeedbackRequest(userId) {
   try {
-    const user = await User.findById(userId);
-    if (!user) throw new Error('User not found');
+    const sessions = await getLastSessionsWithMessages(userId);
+    sessionCount = await getSessionCount(userId);
 
-    const sessions = await getLastSessionsWithMessages(user);
-    if (sessions.length < REQUIRED_SESSIONS_COUNT) {
+    if (sessionCount < REQUIRED_SESSIONS_COUNT) {
       throw new Error(`Not enough sessions for generating feedback. Required: ${REQUIRED_SESSIONS_COUNT}`);
     }
 
@@ -40,6 +40,10 @@ async function generateFeedbackRequest(userId) {
     console.error('Error generating feedback request:', error);
     throw error;
   }
+}
+
+async function getSessionCount(userId) {
+  return Session.countDocuments({ userId: userId });
 }
 
 async function getLastSessionsWithMessages(userId) {
@@ -72,7 +76,6 @@ async function getFeedback(requestId) {
     return { 
       status: 'completed', 
       feedback: feedbackRequest.feedback,
-      sessions: feedbackRequest.sessions
     };
   } catch (error) {
     console.error('Error getting feedback:', error);
