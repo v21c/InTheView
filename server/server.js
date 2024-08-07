@@ -267,6 +267,33 @@ app.get("/api/messages", async (req, res) => {
     }
 });
 
+function runSummaryModel(sessionId) {
+    return new Promise((resolve, reject) => {
+        const pythonProcess = spawn('python', ['./models/summary.py', sessionId]);
+
+        let resultData = '';
+
+        pythonProcess.stdout.on('data', (data) => {
+            resultData += data.toString();
+        });
+
+        pythonProcess.stderr.on('data', (data) => {
+            console.error(`Python Error: ${data}`);
+        });
+
+        pythonProcess.on('close', (code) => {
+            console.log(`Python process exited with code ${code}`);
+            try {
+                const result = JSON.parse(resultData);
+                resolve(result);
+            } catch (error) {
+                reject(error);
+            }
+        });
+    });
+}
+
+
 app.post("/api/messages", async (req, res) => {
     const { sessionId, question, answer, messageScore } = req.body;
 
@@ -279,6 +306,19 @@ app.post("/api/messages", async (req, res) => {
         });
 
         await newMessage.save();
+
+        // 메시지 저장 후 요약 모델 실행
+        try {
+            const summaryResult = await runSummaryModel(sessionId);
+            if (summaryResult.updated) {
+                // 세션 업데이트
+                await Session.findByIdAndUpdate(sessionId, { sessionFeedback: summaryResult.summary });
+                console.log('Session summary updated:', summaryResult.summary);
+            }
+        } catch (summaryError) {
+            console.error('Error running summary model:', summaryError);
+        }
+
         res.status(201).json(newMessage);
     } catch (error) {
         console.error("Error creating message:", error);
@@ -368,6 +408,15 @@ app.put("/api/messages/:messageId", async (req, res) => {
         }).catch((processError) => {
             console.error('Error processing Python script result:', processError);
         });
+
+        try {
+            const summaryResult = await runSummaryModel(message.sessionId);
+            if (summaryResult.updated) {
+                await Session.findByIdAndUpdate(message.sessionId, {sessionFeedback: summaryResult.summary});
+            }
+        } catch (summaryError) {
+            console.error('Error running summary model:', summaryError);
+        }
 
         res.status(200).json(message);
     } catch (error) {
