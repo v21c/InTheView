@@ -1,1 +1,2 @@
 intheview/server/models/score_model/scored_model_bert_cpu.joblib filter=lfs diff=lfs merge=lfs -text
+*.joblib filter=lfs diff=lfs merge=lfs -text
