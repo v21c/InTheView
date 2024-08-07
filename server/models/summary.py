@@ -53,6 +53,7 @@ def update_session_feedback(session_id, summary):
         {"_id": ObjectId(session_id)},
         {"$set": {"sessionFeedback": summary}}
     )
+    print(f"Updated session {session_id} with summary: {summary}")
 
 def check_and_summarize(session_id):
     messages = get_messages_by_session_id(session_id)

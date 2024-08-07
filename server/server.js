@@ -293,7 +293,6 @@ function runSummaryModel(sessionId) {
     });
 }
 
-
 app.post("/api/messages", async (req, res) => {
     const { sessionId, question, answer, messageScore } = req.body;
 
@@ -307,16 +306,20 @@ app.post("/api/messages", async (req, res) => {
 
         await newMessage.save();
 
-        // 메시지 저장 후 요약 모델 실행
-        try {
-            const summaryResult = await runSummaryModel(sessionId);
-            if (summaryResult.updated) {
-                // 세션 업데이트
-                await Session.findByIdAndUpdate(sessionId, { sessionFeedback: summaryResult.summary });
-                console.log('Session summary updated:', summaryResult.summary);
+        // 메시지 개수 확인
+        const messageCount = await Message.countDocuments({ sessionId });
+
+        // 4의 배수일 때만 요약 모델 실행
+        if (messageCount % 4 === 0) {
+            try {
+                const summaryResult = await runSummaryModel(sessionId);
+                if (summaryResult.updated) {
+                    await Session.findByIdAndUpdate(sessionId, { sessionFeedback: summaryResult.summary });
+                    console.log('Session summary updated:', summaryResult.summary);
+                }
+            } catch (summaryError) {
+                console.error('Error running summary model:', summaryError);
             }
-        } catch (summaryError) {
-            console.error('Error running summary model:', summaryError);
         }
 
         res.status(201).json(newMessage);
@@ -368,6 +371,21 @@ app.put("/api/messages/:messageId", async (req, res) => {
         message.answer = answer;
         await message.save();
 
+        // 즉시 응답 보내기
+        res.status(200).json(message);
+
+        // 비동기적으로 점수 계산 및 요약 처리
+        calculateScoreAndUpdateSummary(message);
+
+    } catch (error) {
+        console.error('Error updating message:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+async function calculateScoreAndUpdateSummary(message) {
+    try {
+        // 점수 계산 로직
         const pythonProcess = spawn('python', ['./models/score_model/use_model.py']);
 
         const data = {
@@ -401,29 +419,29 @@ app.put("/api/messages/:messageId", async (req, res) => {
             });
         });
 
-        processPromise.then(async (result) => {
-            message.messageScore = result.final_score;
+        const result = await processPromise;
+        message.messageScore = result.final_score;
+        await message.save();
 
-            await message.save();
-        }).catch((processError) => {
-            console.error('Error processing Python script result:', processError);
-        });
+        // 메시지 개수 확인
+        const messageCount = await Message.countDocuments({ sessionId: message.sessionId });
 
-        try {
-            const summaryResult = await runSummaryModel(message.sessionId);
-            if (summaryResult.updated) {
-                await Session.findByIdAndUpdate(message.sessionId, {sessionFeedback: summaryResult.summary});
+        // 4의 배수일 때만 요약 모델 실행
+        if (messageCount % 4 === 0) {
+            try {
+                const summaryResult = await runSummaryModel(message.sessionId);
+                if (summaryResult.updated) {
+                    await Session.findByIdAndUpdate(message.sessionId, {sessionFeedback: summaryResult.summary});
+                    console.log('Session summary updated:', summaryResult.summary);
+                }
+            } catch (summaryError) {
+                console.error('Error running summary model:', summaryError);
             }
-        } catch (summaryError) {
-            console.error('Error running summary model:', summaryError);
         }
-
-        res.status(200).json(message);
     } catch (error) {
-        console.error('Error updating message:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error('Error in calculateScoreAndUpdateSummary:', error);
     }
-});
+}
 
 app.post("/api/speech-to-text", upload.single("audio"), async (req, res) => {
     if (!req.file) {
