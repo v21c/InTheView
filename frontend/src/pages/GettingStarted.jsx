@@ -11,6 +11,7 @@ const GettingStarted = () => {
   const [lastName, setLastName] = useState("");
   const [gender, setGender] = useState("");
   const [ageRange, setAgeRange] = useState("");
+  const [occupation, setOccupation] = useState("");
   const [experience, setExperience] = useState("");
   const navigate = useNavigate();
 
@@ -62,6 +63,7 @@ const GettingStarted = () => {
         lastName: lastName,
         gender: gender,
         ageRange: ageRange,
+        occupation: occupation,
         experience: experience,
       });
       navigate("/");
@@ -142,6 +144,17 @@ const GettingStarted = () => {
           <option value="35-44">35-44</option>
           <option value="45-54">45-54</option>
           <option value="55-">55-</option>
+        </select>
+
+        <label htmlFor="occupation">Occupation:</label>
+        <select
+          id="occupation"
+          value={occupation}
+          onChange={(e) => setOccupation(e.target.value)}
+          required
+        >
+          <option value="">Select Occupation</option>
+          <option value="ICT">ICT</option>
         </select>
 
         <fieldset>

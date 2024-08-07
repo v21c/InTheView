@@ -1,17 +1,23 @@
-const mongoose = require('mongoose');
 const Session = require("../models/sessionModel");
 const Message = require("../models/messageModel");
 
 exports.createSession = async (req, res) => {
-  const { userId, sessionName, sessionDemand, sessionScore, sessionFeedback, messages } = req.body;
+  const {
+    uid,
+    sessionName,
+    sessionStarted,
+    sessionPurpose,
+    sessionScore,
+    sessionFeedback,
+  } = req.body;
   try {
-    const session = new Session({ 
-      userId, 
-      sessionName, 
-      sessionDemand, 
-      sessionScore, 
-      sessionFeedback, 
-      messages 
+    const session = new Session({
+      userId: uid,
+      sessionName,
+      sessionStarted,
+      sessionPurpose,
+      sessionScore,
+      sessionFeedback,
     });
     await session.save();
     res.status(200).json(session);
@@ -21,22 +27,27 @@ exports.createSession = async (req, res) => {
   }
 };
 
-
 exports.getSessionDetails = async (req, res) => {
-  const { uid } = req.params;
+  const { sessionid } = req.params;
   try {
-    const session = await Session.findOne({ uid });
+    const session = await Session.findById(sessionid);
     if (!session) {
       return res.status(404).json({ message: "Session not found" });
     }
 
-    res.status(200).json({ session });
+    res.status(200).json(session);
   } catch (error) {
     console.error("Server error:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 };
 
+/*  dev version
+exports.createMessage = async (req, res) => {
+  const { sessionid, time, messages } = req.body;
+  try {
+    const message = new Message({ sessionid, time, messages });
+*/
 
 exports.createMessage = async (req, res) => {
   const { sessionId, messageId, question, answer, messageScore, time } = req.body;
@@ -61,6 +72,7 @@ exports.getMessages = async (req, res) => {
   const { sessionid } = req.params;
   try {
     const message = await Message.find({ sessionid });
+    // const message = await Message.findOne({ sessionid });    dev version
     res.status(200).json(message);
   } catch (error) {
     console.error("Server error:", error.message);

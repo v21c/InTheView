@@ -103,6 +103,7 @@ const saveUserToDB = async (user) => {
       lastName: user.lastName || "",
       gender: user.gender || "",
       ageRange: user.ageRange || "",
+      occupation: user.occupation || "",
       experience: user.experience || "",
       score: user.score
         ? {
@@ -118,7 +119,6 @@ const saveUserToDB = async (user) => {
             theme: { darkMode: user.userSettings.theme?.darkMode ?? false },
           }
         : { notification: { email: true }, theme: { darkMode: false } },
-      sessions: user.sessions || [],
     });
   } catch (error) {
     console.error("Error saving user to DB:", error.message);

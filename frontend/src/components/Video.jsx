@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 
-const MainInterview = () => {
+const Video = () => {
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [recordedBlobs, setRecordedBlobs] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -170,7 +170,7 @@ const MainInterview = () => {
   }, [mediaRecorder, recordedBlobs, recognition]);
 
   return (
-    <main id="container">
+    <main id="video-container">
       <video ref={gumVideoRef} id="gum" playsInline autoPlay muted></video>
       <video ref={recordedVideoRef} id="recorded" playsInline loop></video>
 
@@ -195,4 +195,4 @@ const MainInterview = () => {
   );
 };
 
-export default MainInterview;
+export default Video;

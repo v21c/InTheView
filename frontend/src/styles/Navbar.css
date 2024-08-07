@@ -1,8 +1,13 @@
 .navbar {
+  top: 0;
+  left: 0;
+  width: 100%;
+  position: fixed;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 10px 20px;
+  background-color: #2e2e2e;
 }
 
 .navbar-left,
@@ -36,11 +41,6 @@
   height: 40px;
 }
 
-.button-toggle {
-  width: 40px;
-  padding: 0.5em;
-}
-
 .navbar-left > * {
   margin-right: 15px;
 }
@@ -56,52 +56,4 @@
   height: 40px;
   border-radius: 50%;
   margin-right: 15px;
-}
-
-.sessions-list {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 250px;
-  max-width: 300px;
-  background-color: #353535;
-  border-right: 1px solid #e9ecef;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-  padding: 10px;
-  z-index: 1000;
-  transform: translateX(-100%);
-  transition: transform 0.3s ease;
-  display: flex;
-  flex-direction: column;
-}
-
-.sessions-list.open {
-  transform: translateX(0);
-}
-
-.sessions-toggle {
-  position: absolute;
-  /* top: 10px;
-  left: 10px; */
-  padding-left: 10px;
-}
-
-.sessions-content {
-  flex-grow: 1;
-  /* display: flex;
-  justify-content: center;
-  align-items: center; */
-  margin-top: 40px;
-}
-
-.sessions-content ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.sessions-content li {
-  padding: 10px 0;
-  border-bottom: 1px solid #e9ecef;
 }
