@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 
+/* origin version
+
 const SessionSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -15,10 +17,9 @@ const SessionSchema = new mongoose.Schema({
   sessionScore: { type: Number },
   sessionFeedback: { type: String },
 },{ timestamps: true });
+*/
 
-SessionSchema.index({ userId: 1, createdAt: -1 });
 
-/* dev version
 const SessionSchema = new mongoose.Schema(
   {
     userId: { type: String, required: true },
@@ -30,7 +31,8 @@ const SessionSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-*/
+
+SessionSchema.index({ userId: 1, createdAt: -1 });
 
 const Session = mongoose.model("Session", SessionSchema);
 module.exports = Session;

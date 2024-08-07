@@ -3,7 +3,7 @@ const Message = require("../models/messageModel");
 
 exports.createSession = async (req, res) => {
   const {
-    uid,
+    userId,
     sessionName,
     sessionStarted,
     sessionPurpose,
@@ -12,7 +12,7 @@ exports.createSession = async (req, res) => {
   } = req.body;
   try {
     const session = new Session({
-      userId: uid,
+      userId,
       sessionName,
       sessionStarted,
       sessionPurpose,
@@ -26,6 +26,17 @@ exports.createSession = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+exports.getSession = async (req, res) => {
+  const userId = req.query.userId;
+  try {
+    const sessions = await Session.find({ userId }).sort({ createdAt: -1 });
+    res.status(200).json(sessions);
+  } catch (error) {
+    console.error("Error fetching sessions:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+}
 
 exports.getSessionDetails = async (req, res) => {
   const { sessionid } = req.params;
@@ -42,40 +53,45 @@ exports.getSessionDetails = async (req, res) => {
   }
 };
 
-/*  dev version
-exports.createMessage = async (req, res) => {
-  const { sessionid, time, messages } = req.body;
-  try {
-    const message = new Message({ sessionid, time, messages });
-*/
+exports.updateSession = async (req, res) => {
+  const { sessionId } = req.params;
+  const { sessionName, sessionStarted, sessionPurpose } = req.body;
 
-exports.createMessage = async (req, res) => {
-  const { sessionId, messageId, question, answer, messageScore, time } = req.body;
   try {
-    const message = new Message({ 
-      sessionId,
-      messageId, 
-      question, 
-      answer, 
-      messageScore, 
-      time,
-    });
-    await message.save();
-    res.status(201).json(message);
+    const session = await Session.findById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    session.sessionName = sessionName || session.sessionName;
+    session.sessionStarted =
+      sessionStarted !== undefined ? sessionStarted : session.sessionStarted;
+    session.sessionPurpose = sessionPurpose || session.sessionPurpose; // Updated session purpose
+    await session.save();
+
+    res.json(session);
   } catch (error) {
-    console.error("Server error:", error.message);
+    console.error("Error updating session:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-exports.getMessages = async (req, res) => {
-  const { sessionid } = req.params;
+exports.deleteSession = async (req, res) => {
+  const { sessionId } = req.params;
+
   try {
-    const message = await Message.find({ sessionid });
-    // const message = await Message.findOne({ sessionid });    dev version
-    res.status(200).json(message);
+    const session = await Session.findByIdAndDelete(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    res.status(200).json({ message: "Session deleted successfully" });
   } catch (error) {
-    console.error("Server error:", error.message);
+    console.error("Error deleting session:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
