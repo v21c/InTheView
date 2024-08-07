@@ -5,8 +5,7 @@ import icon_session from "../assets/session.svg";
 import icon_logo from "../assets/logo.png";
 import "../styles/Navbar.css";
 
-const Navbar = ({ setSelectedSession, toggleSessions }) => {
-  // Added toggleSessions as a prop
+const Navbar = ({ toggleSessions }) => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 

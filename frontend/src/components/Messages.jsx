@@ -1,48 +1,98 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import icon_submit from "../assets/submit.svg";
 import "../styles/Messages.css";
 
-const Messages = ({ user, selectedSession }) => {
+const Messages = ({
+  user,
+  selectedSession,
+  sessionName,
+  newQuestionGenerated,
+}) => {
   const [userInput, setUserInput] = useState("");
-  const [averageScore, setAverageScore] = useState(0);
   const [messages, setMessages] = useState([]);
   const [currentQuestionId, setCurrentQuestionId] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [sessionPurpose, setSessionPurpose] = useState("");
-  const [sessionStarted, setSessionStarted] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
-  const [shouldSubmit, setShouldSubmit] = useState(false);
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    const fetchSessionDetails = async () => {
+    const fetchMessages = async () => {
       if (selectedSession) {
         try {
           const response = await axios.get(
-            `http://localhost:5000/api/sessions/${selectedSession}`
+            "http://localhost:5000/api/messages",
+            {
+              params: { sessionId: selectedSession },
+            }
           );
-          const session = response.data;
-          setSessionStarted(session.sessionStarted);
-          setSessionPurpose(session.sessionPurpose || "");
-          setMessages(await fetchMessages(selectedSession));
+          const fetchedMessages = response.data;
+          setMessages(fetchedMessages);
+
+          const latestQuestion = fetchedMessages.find(
+            (msg) => msg.answer === ""
+          );
+          if (latestQuestion) {
+            setCurrentQuestionId(latestQuestion._id);
+          }
         } catch (error) {
-          console.error(`Error fetching session details:`, error);
+          console.error("Error fetching messages:", error);
         }
       }
     };
 
-    fetchSessionDetails();
-  }, [selectedSession]);
+    fetchMessages();
+  }, [selectedSession, newQuestionGenerated]);
 
-  const fetchMessages = async (sessionId) => {
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
+  const updateMessage = async (messageId, answer) => {
     try {
-      const response = await axios.get("http://localhost:5000/api/messages", {
-        params: { sessionId },
+      await axios.put(`http://localhost:5000/api/messages/${messageId}`, {
+        answer,
       });
+
+      const updatedMessages = await axios.get(
+        "http://localhost:5000/api/messages",
+        {
+          params: { sessionId: selectedSession },
+        }
+      );
+      setMessages(updatedMessages.data);
+    } catch (error) {
+      console.error("Error updating message:", error);
+    }
+  };
+
+  const createMessage = async (question, answer = "") => {
+    if (!selectedSession) {
+      console.error("No session selected to create message for.");
+      return;
+    }
+    try {
+      const response = await axios.post("http://localhost:5000/api/messages", {
+        sessionId: selectedSession,
+        question,
+        answer,
+        messageScore: 0,
+      });
+
+      const updatedMessages = await axios.get(
+        "http://localhost:5000/api/messages",
+        {
+          params: { sessionId: selectedSession },
+        }
+      );
+      setMessages(updatedMessages.data);
+
       return response.data;
     } catch (error) {
-      console.error(`Error fetching messages for session ${sessionId}:`, error);
-      return [];
+      console.error("Error creating message:", error);
     }
   };
 
@@ -66,41 +116,6 @@ const Messages = ({ user, selectedSession }) => {
     }
   };
 
-  const createMessage = async (question, answer = "") => {
-    if (!selectedSession) {
-      console.error("No session selected to create message for.");
-      return;
-    }
-    try {
-      const response = await axios.post("http://localhost:5000/api/messages", {
-        sessionId: selectedSession,
-        question,
-        answer,
-        messageScore: 0,
-      });
-      console.log("Message created:", response.data);
-
-      setMessages((prevMessages) => [...prevMessages, response.data]);
-
-      return response.data;
-    } catch (error) {
-      console.error("Error creating message:", error);
-    }
-  };
-
-  const updateMessage = async (messageId, answer) => {
-    try {
-      const response = await axios.put(
-        `http://localhost:5000/api/messages/${messageId}`,
-        { answer }
-      );
-      console.log("Message updated:", response.data);
-      setMessages(await fetchMessages(selectedSession));
-    } catch (error) {
-      console.error("Error updating message:", error);
-    }
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!userInput.trim() || !selectedSession || !currentQuestionId) {
@@ -109,27 +124,17 @@ const Messages = ({ user, selectedSession }) => {
     try {
       await updateMessage(currentQuestionId, userInput);
       setUserInput("");
-      console.log("Message updated successfully");
+      document.querySelector("textarea").style.height = "auto";
       await handleGenerateQuestion();
     } catch (error) {
       console.error("Error in handleSubmit:", error);
     }
   };
 
-  const startInterview = async () => {
-    if (!selectedSession) return;
-
-    try {
-      await axios.put(`http://localhost:5000/api/sessions/${selectedSession}`, {
-        sessionStarted: true,
-        sessionPurpose, // Update session purpose on server
-      });
-      setSessionStarted(true);
-    } catch (error) {
-      console.error("Error updating session:", error);
-    }
-
-    await handleGenerateQuestion();
+  const handleInput = (e) => {
+    e.target.style.height = "auto";
+    const newHeight = Math.min(e.target.scrollHeight, 200); // Cap the height at 200px
+    e.target.style.height = `${newHeight}px`;
   };
 
   const startRecording = async () => {
@@ -178,7 +183,7 @@ const Messages = ({ user, selectedSession }) => {
       );
       const transcribedText = response.data.text;
       setUserInput(transcribedText);
-      setShouldSubmit(true);
+      await handleSubmit(new Event("submit"));
     } catch (error) {
       console.error("Error processing audio:", error);
     }
@@ -218,53 +223,42 @@ const Messages = ({ user, selectedSession }) => {
   // }, [shouldSubmit, userInput]);
 
   return (
-    <div className="chat-container">
-      <div className="messages-container">
-        {!sessionStarted && (
-          <>
-            <input
-              type="text"
-              value={sessionPurpose}
-              onChange={(e) => setSessionPurpose(e.target.value)}
-              placeholder="Enter session purpose..."
+    <div className="messages-container">
+      <div className="chat-container">
+        <h2>Messages</h2>
+        <div className="selected-session">
+          Selected Session: {selectedSession}
+        </div>
+        <div className="messages">
+          {messages.map((message) => (
+            <div key={message._id} className="message">
+              <div className="message-question">{message.question}</div>
+              {message.answer.trim() !== "" && (
+                <div className="message-answer">{message.answer}</div>
+              )}
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+      <div className="submission-container">
+        <div className="recording-status">
+          {isRecording ? "Recording..." : "Press and hold space to record"}
+        </div>
+        <div className="submission">
+          <form onSubmit={handleSubmit}>
+            <textarea
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              placeholder="or Enter your message"
+              rows={1}
+              onInput={handleInput}
             />
-            <button onClick={startInterview} disabled={!selectedSession}>
-              Start Interview
+            <button type="submit">
+              <img src={icon_submit} alt="submit" className="button-submit" />
             </button>
-          </>
-        )}
-        {sessionStarted && (
-          <>
-            <h2>Messages</h2>
-            {selectedSession && (
-              <>
-                <div className="selected-session">
-                  Selected Session: {selectedSession}
-                </div>
-                {messages.map((message) => (
-                  <div key={message._id} className="message">
-                    <div className="message-question">{message.question}</div>
-                    <div className="message-answer">{message.answer}</div>
-                  </div>
-                ))}
-                <form onSubmit={handleSubmit}>
-                  <input
-                    type="text"
-                    value={userInput}
-                    onChange={(e) => setUserInput(e.target.value)}
-                    placeholder="Enter your message or press space to record..."
-                  />
-                  <button type="submit">Submit Message</button>
-                </form>
-                <div className="recording-status">
-                  {isRecording
-                    ? "Recording..."
-                    : "Press and hold space to record"}
-                </div>
-              </>
-            )}
-          </>
-        )}
+          </form>
+        </div>
       </div>
     </div>
   );

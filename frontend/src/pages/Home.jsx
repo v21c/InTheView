@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { authStateListener } from "../Firebase";
-import Interview from "../components/Interview"; // Updated import to use Interview
+import Interview from "../components/Interview";
 import Navbar from "../components/Navbar";
 import Sessions from "../components/Sessions";
+import "../styles/Home.css";
 
 const Home = () => {
   const [user, setUser] = useState(null);
@@ -58,10 +59,7 @@ const Home = () => {
 
   return (
     <div>
-      <Navbar
-        setSelectedSession={setSelectedSession}
-        toggleSessions={toggleSessions}
-      />
+      <Navbar toggleSessions={toggleSessions} />
       {user && (
         <Sessions
           user={user}
@@ -73,13 +71,15 @@ const Home = () => {
       {user ? (
         <>
           {selectedSession ? (
-            <Interview user={user} selectedSession={selectedSession} /> // Updated to use Interview
+            <Interview user={user} selectedSession={selectedSession} />
           ) : (
-            <h1>안녕하세요, {user.displayName || user.email}님</h1>
+            <div className="welcome-login">
+              <h1>안녕하세요, {user.displayName || user.email}님</h1>
+            </div>
           )}
         </>
       ) : (
-        <div>
+        <div className="welcome-logout">
           <h1>면접에 통과하고 싶은가요?</h1>
           <h1>인더뷰에 가입하세요!</h1>
         </div>
