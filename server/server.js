@@ -3,7 +3,11 @@ const connectDB = require("./db");
 const User = require("./models/userModel");
 const Session = require("./models/sessionModel");
 const Message = require("./models/messageModel");
+const Feedback = require("./models/feedbackModel");
+const userController = require("./controllers/userController");
 const sessionController = require("./controllers/sessionController");
+const messageController = require("./controllers/messageController");
+const feedbackController = require("./controllers/feedbackController");
 const OpenAI = require("openai");
 const multer = require("multer");
 const fs = require("fs");
@@ -11,6 +15,11 @@ const { exec } = require("child_process");
 const util = require("util");
 const { spawn } = require('child_process');
 const { generateSummary } = require('./models/summaryModel');
+const userRoute = require('./routes/userRoute');
+const sessionRoute = require('./routes/sessionRoute');
+const messageRoute = require('./routes/messageRoute');
+const feedbackRoute = require("./routes/feedbackRoute");
+const { generateFeedbackRequest, getFeedback } = require('./feedbackService');
 require("dotenv").config();
 
 const app = express();
@@ -295,14 +304,13 @@ app.post("/api/messages", async (req, res) => {
         res.status(201).json(newMessage);
 
         // 비동기적으로 점수 계산 및 요약 처리
-        calculateScoreAndUpdateSummary(newMessage);
+        // calculateScoreAndUpdateSummary(newMessage);
 
     } catch (error) {
         console.error("Error creating message:", error);
         res.status(500).json({ message: "Server error" });
     }
 });
-
 app.get("/api/generate-question", async (req, res) => {
     try {
         const response = await openai.chat.completions.create({
@@ -399,9 +407,10 @@ async function calculateScoreAndUpdateSummary(message) {
 
         // 메시지 개수 확인
         const messageCount = await Message.countDocuments({ sessionId: message.sessionId });
+        // console.log(messageCount);
 
         // 요약 실행 조건: 3번째 메시지 또는 7, 11, 15, ...번째 메시지일 때
-        if (messageCount === 3 || (messageCount > 3 && (messageCount - 3) % 4 === 0)) {
+        if (messageCount % 3 === 0) {
             try {
                 const summaryResult = await runSummaryModel(message.sessionId);
                 if (summaryResult.updated) {
@@ -443,6 +452,11 @@ app.post("/api/speech-to-text", upload.single("audio"), async (req, res) => {
         res.status(500).json({ error: "Error transcribing audio" });
     }
 });
+
+app.use('/api/users', userRoute);
+app.use('/api/sessions', sessionRoute); 
+app.use('/api/messages', messageRoute);
+app.use('/api/feedback', feedbackRoute);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
