@@ -1,7 +1,7 @@
-const Session = require("../models/sessionModel");
-const Message = require("../models/messageModel");
+import Session from "../models/sessionModel.js";
+import Message from "../models/messageModel.js";
 
-exports.createSession = async (req, res) => {
+export const createSession = async (req, res) => {
   const {
     uid,
     sessionName,
@@ -27,7 +27,7 @@ exports.createSession = async (req, res) => {
   }
 };
 
-exports.getSessionDetails = async (req, res) => {
+export const getSessionDetails = async (req, res) => {
   const { sessionid } = req.params;
   try {
     const session = await Session.findById(sessionid);
@@ -42,7 +42,7 @@ exports.getSessionDetails = async (req, res) => {
   }
 };
 
-exports.createMessage = async (req, res) => {
+export const createMessage = async (req, res) => {
   const { sessionid, time, messages } = req.body;
   try {
     const message = new Message({ sessionid, time, messages });
@@ -54,7 +54,7 @@ exports.createMessage = async (req, res) => {
   }
 };
 
-exports.getMessages = async (req, res) => {
+export const getMessages = async (req, res) => {
   const { sessionid } = req.params;
   try {
     const message = await Message.findOne({ sessionid });
@@ -64,3 +64,5 @@ exports.getMessages = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export default { getSessionDetails, createMessage, getMessages };

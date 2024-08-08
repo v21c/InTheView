@@ -23,9 +23,7 @@ const Messages = ({
         try {
           const response = await axios.get(
             "http://localhost:5000/api/messages",
-            {
-              params: { sessionId: selectedSession },
-            }
+            { params: { sessionId: selectedSession } }
           );
           const fetchedMessages = response.data;
           setMessages(fetchedMessages);
@@ -56,12 +54,9 @@ const Messages = ({
       await axios.put(`http://localhost:5000/api/messages/${messageId}`, {
         answer,
       });
-
       const updatedMessages = await axios.get(
         "http://localhost:5000/api/messages",
-        {
-          params: { sessionId: selectedSession },
-        }
+        { params: { sessionId: selectedSession } }
       );
       setMessages(updatedMessages.data);
     } catch (error) {
@@ -84,9 +79,7 @@ const Messages = ({
 
       const updatedMessages = await axios.get(
         "http://localhost:5000/api/messages",
-        {
-          params: { sessionId: selectedSession },
-        }
+        { params: { sessionId: selectedSession } }
       );
       setMessages(updatedMessages.data);
 
@@ -103,11 +96,16 @@ const Messages = ({
       const response = await axios.get(
         "http://localhost:5000/api/generate-question"
       );
-      const question = response.data.question.message.content;
+      const { question, fileUrl } = response.data;
 
       if (question) {
         const createdMessage = await createMessage(question);
         setCurrentQuestionId(createdMessage._id);
+
+        const audio = new Audio(`http://localhost:5000${fileUrl}`);
+        audio
+          .play()
+          .catch((error) => console.error("Error playing audio:", error));
       } else {
         console.error("No question generated.");
       }
@@ -133,7 +131,7 @@ const Messages = ({
 
   const handleInput = (e) => {
     e.target.style.height = "auto";
-    const newHeight = Math.min(e.target.scrollHeight, 200); // Cap the height at 200px
+    const newHeight = Math.min(e.target.scrollHeight, 200);
     e.target.style.height = `${newHeight}px`;
   };
 
@@ -177,9 +175,7 @@ const Messages = ({
       const response = await axios.post(
         "http://localhost:5000/api/speech-to-text",
         formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
       const transcribedText = response.data.text;
       setUserInput(transcribedText);
@@ -211,16 +207,6 @@ const Messages = ({
       window.removeEventListener("keyup", handleKeyUp);
     };
   }, [isRecording]);
-
-  // Submit right after processAudio
-  // useEffect(() => {
-  //   if (shouldSubmit) {
-  //     if (userInput.trim()) {
-  //       handleSubmit(new Event("submit"));
-  //     }
-  //     setShouldSubmit(false);
-  //   }
-  // }, [shouldSubmit, userInput]);
 
   return (
     <div className="messages-container">

@@ -48,11 +48,16 @@ const Purpose = ({
       const response = await axios.get(
         "http://localhost:5000/api/generate-question"
       );
-      const question = response.data.question.message.content;
+      const { question, fileUrl } = response.data;
 
       if (question) {
         await createMessage(question);
         onNewQuestionGenerated();
+
+        const audio = new Audio(`http://localhost:5000${fileUrl}`);
+        audio
+          .play()
+          .catch((error) => console.error("Error playing audio:", error));
       } else {
         console.error("No question generated.");
       }

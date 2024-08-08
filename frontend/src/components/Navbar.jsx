@@ -1,12 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { logout, authStateListener } from "../Firebase";
 import icon_session from "../assets/session.svg";
 import icon_logo from "../assets/logo.png";
+import Settings from "./Settings"; // Import the new component
 import "../styles/Navbar.css";
 
 const Navbar = ({ toggleSessions }) => {
   const [user, setUser] = useState(null);
+  const [showUserOptions, setShowUserOptions] = useState(false);
+  const [showSettings, setShowSettings] = useState(false); // New state for dialog
+  const userOptionsRef = useRef();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,9 +20,38 @@ const Navbar = ({ toggleSessions }) => {
     };
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        userOptionsRef.current &&
+        !userOptionsRef.current.contains(event.target)
+      ) {
+        setShowUserOptions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const handleLogout = async () => {
     await logout();
     navigate("/");
+  };
+
+  const toggleUserOptions = () => {
+    setShowUserOptions(!showUserOptions);
+  };
+
+  const openSettings = () => {
+    setShowSettings(true);
+    setShowUserOptions(false);
+  };
+
+  const closeSettings = () => {
+    setShowSettings(false);
   };
 
   return (
@@ -45,16 +78,20 @@ const Navbar = ({ toggleSessions }) => {
       </div>
       <div className="navbar-right">
         {user ? (
-          <>
+          <div className="user-profile-container" ref={userOptionsRef}>
             <img
               src="https://via.placeholder.com/150"
               alt="User Profile"
               className="profile-picture"
+              onClick={toggleUserOptions}
             />
-            <button className="button-logout" onClick={handleLogout}>
-              Logout
-            </button>
-          </>
+            {showUserOptions && (
+              <div className="user-options-box">
+                <button onClick={openSettings}>Settings</button>
+                <button onClick={handleLogout}>Logout</button>
+              </div>
+            )}
+          </div>
         ) : (
           <>
             <Link to="/sign-in">
@@ -66,6 +103,7 @@ const Navbar = ({ toggleSessions }) => {
           </>
         )}
       </div>
+      <Settings user={user} isOpen={showSettings} onClose={closeSettings} />
     </nav>
   );
 };

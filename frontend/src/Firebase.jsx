@@ -10,6 +10,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  verifyBeforeUpdateEmail,
 } from "firebase/auth";
 import axios from "axios";
 
@@ -125,6 +126,16 @@ const saveUserToDB = async (user) => {
   }
 };
 
+const updateEmail = async (user, newEmail, setError) => {
+  try {
+    await verifyBeforeUpdateEmail(user, newEmail);
+    alert("Verification email sent. Please check your inbox.");
+  } catch (error) {
+    handleAuthError(error, setError);
+    throw error;
+  }
+};
+
 const handleAuthError = (error, setError) => {
   let errorMessage;
   switch (error.code) {
@@ -171,4 +182,6 @@ export {
   resetPasswordWithEmail,
   confirmPasswordResetEmail,
   logout,
+  updateEmail,
+  getAuth,
 };

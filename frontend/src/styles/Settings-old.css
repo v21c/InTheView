@@ -1,0 +1,94 @@
+.user-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.user-dialog {
+  background-color: #3c3c3c;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dialog-container {
+  display: flex;
+  width: 600px;
+}
+
+.dialog-header {
+  display: flex;
+  padding: 0.5em;
+  justify-content: space-between;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+}
+
+.dialog-name {
+  padding: 0.3em 0 0.3em 0.7em;
+}
+
+.dialog-sidebar {
+  padding: 0.2em;
+  width: 150px;
+  background-color: #4a4a4a;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog-sidebar button {
+  margin: 0.2em;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dialog-sidebar button.active {
+  background-color: #282828;
+}
+
+.dialog-main {
+  flex: 1;
+  padding: 20px;
+  position: relative;
+  background-color: #272727;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 25px;
+  cursor: pointer;
+  padding: 0;
+  margin-right: 15px;
+}
+
+/* .dialog-content {
+} */
+
+.profile-item,
+.general-item {
+  margin-bottom: 15px;
+}
+
+.profile-item label,
+.general-item label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.profile-item input,
+.general-item select {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+}

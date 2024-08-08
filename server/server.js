@@ -1,29 +1,33 @@
-const express = require("express");
-const connectDB = require("./db");
-const User = require("./models/userModel");
-const Session = require("./models/sessionModel");
-const Message = require("./models/messageModel");
-const sessionController = require("./controllers/sessionController");
-const OpenAI = require("openai");
-const multer = require("multer");
-const fs = require("fs");
-const { exec } = require("child_process");
-const util = require("util");
-require("dotenv").config();
+import express from "express";
+import connectDB from "./db.js";
+import User from "./models/userModel.js";
+import Session from "./models/sessionModel.js";
+import Message from "./models/messageModel.js";
+import sessionController from "./controllers/sessionController.js";
+import OpenAI from "openai";
+import multer from "multer";
+import fs from "fs";
+import { exec } from "child_process";
+import util from "util";
+import dotenv from "dotenv";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 connectDB();
 
-const cors = require("cors");
 const corsOptions = {
   origin: "*",
   credentials: true, //access-control-allow-credentials:true
   optionSuccessStatus: 200,
 };
-app.use(cors(corsOptions));
-app.use(express.json());
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -32,6 +36,10 @@ const openai = new OpenAI({
 const upload = multer({ dest: "uploads/" });
 
 const execPromise = util.promisify(exec);
+
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use("/exports", express.static(path.join(__dirname, "exports")));
 
 app.post("/api/users", async (req, res) => {
   const {
@@ -93,41 +101,17 @@ app.post("/api/users", async (req, res) => {
 
 app.put("/api/users/:uid", async (req, res) => {
   const { uid } = req.params;
-  const {
-    submittedGettingStarted,
-    firstName,
-    lastName,
-    gender,
-    ageRange,
-    occupation,
-    experience,
-    score,
-    userSettings,
-  } = req.body;
+  const updateFields = req.body;
 
   try {
-    let user = await User.findOne({ uid });
+    // Use findOneAndUpdate with $set to update only the provided fields
+    const user = await User.findOneAndUpdate(
+      { uid },
+      { $set: updateFields },
+      { new: true, runValidators: true } // Return the updated document and run schema validators
+    );
+
     if (user) {
-      user.submittedGettingStarted = submittedGettingStarted;
-      user.firstName = firstName;
-      user.lastName = lastName;
-      user.gender = gender;
-      user.ageRange = ageRange;
-      user.occupation = occupation;
-      user.experience = experience;
-      user.score = score
-        ? {
-            averageScore: score.averageScore || 0,
-            totalScore: score.totalScore || [],
-          }
-        : { averageScore: 0, totalScore: [] };
-      user.userSettings = userSettings
-        ? {
-            notification: { email: userSettings.notification?.email ?? true },
-            theme: { darkMode: userSettings.theme?.darkMode ?? false },
-          }
-        : { notification: { email: true }, theme: { darkMode: false } };
-      await user.save();
       res.status(200).json(user);
     } else {
       res.status(404).json({ message: "User not found" });
@@ -137,6 +121,53 @@ app.put("/api/users/:uid", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// app.put("/api/users/:uid", async (req, res) => {
+//   const { uid } = req.params;
+//   const {
+//     submittedGettingStarted,
+//     firstName,
+//     lastName,
+//     gender,
+//     ageRange,
+//     occupation,
+//     experience,
+//     score,
+//     userSettings,
+//   } = req.body;
+
+//   try {
+//     let user = await User.findOne({ uid });
+//     if (user) {
+//       user.submittedGettingStarted = submittedGettingStarted;
+//       user.firstName = firstName;
+//       user.lastName = lastName;
+//       user.gender = gender;
+//       user.ageRange = ageRange;
+//       user.occupation = occupation;
+//       user.experience = experience;
+//       user.score = score
+//         ? {
+//             averageScore: score.averageScore || 0,
+//             totalScore: score.totalScore || [],
+//           }
+//         : { averageScore: 0, totalScore: [] };
+//       user.userSettings = userSettings
+//         ? {
+//             notification: { email: userSettings.notification?.email ?? true },
+//             theme: { darkMode: userSettings.theme?.darkMode ?? false },
+//           }
+//         : { notification: { email: true }, theme: { darkMode: false } };
+//       await user.save();
+//       res.status(200).json(user);
+//     } else {
+//       res.status(404).json({ message: "User not found" });
+//     }
+//   } catch (error) {
+//     console.error("Server error:", error.message);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// });
 
 app.get("/api/users/:uid", async (req, res) => {
   const { uid } = req.params;
@@ -150,6 +181,29 @@ app.get("/api/users/:uid", async (req, res) => {
     }
   } catch (error) {
     console.error("Server error:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.delete("/api/users/:uid", async (req, res) => {
+  const { uid } = req.params;
+
+  try {
+    // Delete user
+    const user = await User.findOneAndDelete({ uid });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Optionally, delete associated sessions and messages
+    await Session.deleteMany({ userId: uid });
+    await Message.deleteMany({ sessionId: { $in: user.sessions } });
+
+    res
+      .status(200)
+      .json({ message: "User and related data deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -285,6 +339,27 @@ app.post("/api/messages", async (req, res) => {
   }
 });
 
+app.put("/api/messages/:messageId", async (req, res) => {
+  const { messageId } = req.params;
+  const { answer } = req.body;
+
+  try {
+    const message = await Message.findById(messageId);
+
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    message.answer = answer;
+    await message.save();
+
+    res.status(200).json(message);
+  } catch (error) {
+    console.error("Error updating message:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 app.get("/api/generate-question", async (req, res) => {
   try {
     const response = await openai.chat.completions.create({
@@ -305,32 +380,23 @@ app.get("/api/generate-question", async (req, res) => {
       max_tokens: 64,
       top_p: 1,
     });
-    const question = response.choices[0];
-    res.json({ question });
+    const question = response.choices[0].message.content;
+
+    // Generate speech for the question
+    const mp3Response = await openai.audio.speech.create({
+      model: "tts-1",
+      voice: "alloy",
+      input: question,
+    });
+    const buffer = Buffer.from(await mp3Response.arrayBuffer());
+    const filePath = path.resolve(__dirname, `./exports/${Date.now()}.mp3`);
+    await fs.promises.writeFile(filePath, buffer);
+    const fileUrl = `/exports/${path.basename(filePath)}`;
+
+    res.json({ question, fileUrl });
   } catch (error) {
     console.error("Error generating question:", error);
     res.status(500).json({ error: "Error generating question" });
-  }
-});
-
-app.put("/api/messages/:messageId", async (req, res) => {
-  const { messageId } = req.params;
-  const { answer } = req.body;
-
-  try {
-    const message = await Message.findById(messageId);
-
-    if (!message) {
-      return res.status(404).json({ message: "Message not found" });
-    }
-
-    message.answer = answer;
-    await message.save();
-
-    res.status(200).json(message);
-  } catch (error) {
-    console.error("Error updating message:", error);
-    res.status(500).json({ message: "Server error" });
   }
 });
 
