@@ -1,25 +1,32 @@
-const { spawn } = require('child_process');
-const sessionId = ''; // 실제 세션 ID로 교체해야 합니다
+const OpenAI = require('openai');
+require('dotenv').config();
 
-const pythonProcess = spawn('python', ['./summary.py', sessionId]);
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+});
 
-pythonProcess.stdout.on('data', (data) => {
+async function generateSummary(sessionId, messages) {
     try {
-        const result = JSON.parse(data);
-        // if (result.updated) {
-        //     console.log('Summary updated:', result.summary);
-        // } else {
-        //     console.log('No update needed');
-        // }
+        const prompt = `다음 대화를 요약해주세요. 주요 토픽과 핵심 포인트를 중점적으로 한 문장으로 간결하게 요약해주세요 "~~에 대한 면접 대화" 이런식으로 간결하게:
+
+        ${messages.map(m => `Q: ${m.question}\nA: ${m.answer}`).join('\n\n')}`;
+
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+                { role: "system", content: "너는 대화를 요약하는 gpt야" },
+                { role: "user", content: prompt }
+            ],
+            max_tokens: 150,
+            temperature: 0.7,
+        });
+
+        const summary = response.choices[0].message.content.trim();
+        return { updated: true, summary };
     } catch (error) {
-        console.error('Error parsing Python output:', error);
+        console.error('Error generating summary:', error);
+        return { updated: false, error: error.message };
     }
-});
+}
 
-pythonProcess.stderr.on('data', (data) => {
-    console.error(`Python Error: ${data}`);
-});
-
-// pythonProcess.on('close', (code) => {
-//     console.log(`Python process exited with code ${code}`);
-// });
+module.exports = { generateSummary };

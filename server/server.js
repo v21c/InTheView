@@ -10,6 +10,7 @@ const fs = require("fs");
 const { exec } = require("child_process");
 const util = require("util");
 const { spawn } = require('child_process');
+const { generateSummary } = require('./models/summaryModel');
 require("dotenv").config();
 
 const app = express();
@@ -267,33 +268,14 @@ app.get("/api/messages", async (req, res) => {
     }
 });
 
-function runSummaryModel(sessionId) {
-    return new Promise((resolve, reject) => {
-        const pythonProcess = spawn('python', ['./models/summary.py', sessionId]);
-
-        let resultData = '';
-
-        pythonProcess.stdout.on('data', (data) => {
-            resultData += data.toString();
-        });
-
-        pythonProcess.stderr.on('data', (data) => {
-            console.error(`Python Error: ${data}`);
-        });
-
-        pythonProcess.on('close', (code) => {
-            // console.log(`Python process exited with code ${code}`);
-            try {
-                const jsonObjects = resultData.trim().split('\n').filter(line => line.trim() !== '');
-                const lastJsonObject = jsonObjects[jsonObjects.length - 1];
-                const result = JSON.parse(lastJsonObject);
-                resolve(result);
-            } catch (error) {
-                console.error('Error parsing Python output:', error, 'Raw output:', resultData);
-                reject(error);
-            }
-        });
-    });
+async function runSummaryModel(sessionId) {
+    try {
+        const messages = await Message.find({ sessionId });
+        return await generateSummary(sessionId, messages);
+    } catch (error) {
+        console.error('Error running summary model:', error);
+        throw error;
+    }
 }
 
 app.post("/api/messages", async (req, res) => {
@@ -309,23 +291,12 @@ app.post("/api/messages", async (req, res) => {
 
         await newMessage.save();
 
-        // 메시지 개수 확인
-        const messageCount = await Message.countDocuments({ sessionId });
-
-        // 4의 배수일 때만 요약 모델 실행
-        if (messageCount % 4 === 0) {
-            try {
-                const summaryResult = await runSummaryModel(sessionId);
-                if (summaryResult.updated) {
-                    await Session.findByIdAndUpdate(sessionId, {sessionName : summaryResult.summary });
-                    // console.log('Session summary updated:', summaryResult.summary);
-                }
-            } catch (summaryError) {
-                console.error('Error running summary model:', summaryError);
-            }
-        }
-
+        // 즉시 응답 보내기
         res.status(201).json(newMessage);
+
+        // 비동기적으로 점수 계산 및 요약 처리
+        calculateScoreAndUpdateSummary(newMessage);
+
     } catch (error) {
         console.error("Error creating message:", error);
         res.status(500).json({ message: "Server error" });
@@ -429,12 +400,12 @@ async function calculateScoreAndUpdateSummary(message) {
         // 메시지 개수 확인
         const messageCount = await Message.countDocuments({ sessionId: message.sessionId });
 
-        // 4의 배수일 때만 요약 모델 실행
-        if (messageCount % 4 === 0) {
+        // 요약 실행 조건: 3번째 메시지 또는 7, 11, 15, ...번째 메시지일 때
+        if (messageCount === 3 || (messageCount > 3 && (messageCount - 3) % 4 === 0)) {
             try {
                 const summaryResult = await runSummaryModel(message.sessionId);
                 if (summaryResult.updated) {
-                    await Session.findByIdAndUpdate(message.sessionId, {sessionName: summaryResult.summary});
+                    await Session.findByIdAndUpdate(message.sessionId, { sessionName: summaryResult.summary });
                     // console.log('Session summary updated:', summaryResult.summary);
                 }
             } catch (summaryError) {
