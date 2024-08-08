@@ -3,16 +3,16 @@ import connectDB from "./db.js";
 import User from "./models/userModel.js";
 import Session from "./models/sessionModel.js";
 import Message from "./models/messageModel.js";
-import sessionController from "./controllers/sessionController.js";
 import OpenAI from "openai";
 import multer from "multer";
 import fs from "fs";
-import { exec } from "child_process";
+import { exec, spawn } from "child_process";
 import util from "util";
 import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import { generateSummary } from "./models/summaryModel.js";
 
 dotenv.config();
 
@@ -320,6 +320,16 @@ app.get("/api/messages", async (req, res) => {
   }
 });
 
+async function runSummaryModel(sessionId) {
+  try {
+    const messages = await Message.find({ sessionId });
+    return await generateSummary(sessionId, messages);
+  } catch (error) {
+    console.error("Error running summary model:", error);
+    throw error;
+  }
+}
+
 app.post("/api/messages", async (req, res) => {
   const { sessionId, question, answer, messageScore } = req.body;
 
@@ -332,7 +342,12 @@ app.post("/api/messages", async (req, res) => {
     });
 
     await newMessage.save();
+
+    // 즉시 응답 보내기
     res.status(201).json(newMessage);
+
+    // 비동기적으로 점수 계산 및 요약 처리
+    calculateScoreAndUpdateSummary(newMessage);
   } catch (error) {
     console.error("Error creating message:", error);
     res.status(500).json({ message: "Server error" });
@@ -399,6 +414,100 @@ app.get("/api/generate-question", async (req, res) => {
     res.status(500).json({ error: "Error generating question" });
   }
 });
+
+app.put("/api/messages/:messageId", async (req, res) => {
+  const { messageId } = req.params;
+  const { answer } = req.body;
+
+  try {
+    const message = await Message.findById(messageId);
+
+    if (!message) {
+      console.error("Message not found:", messageId);
+      return res.status(404).json({ message: "Message not found" });
+    }
+    message.answer = answer;
+    await message.save();
+
+    // 즉시 응답 보내기
+    res.status(200).json(message);
+
+    // 비동기적으로 점수 계산 및 요약 처리
+    calculateScoreAndUpdateSummary(message);
+  } catch (error) {
+    console.error("Error updating message:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+async function calculateScoreAndUpdateSummary(message) {
+  try {
+    // 점수 계산 로직
+    const pythonProcess = spawn("python", [
+      "./models/score_model/use_model.py",
+    ]);
+
+    const data = {
+      question: message.question,
+      answer: message.answer,
+    };
+
+    pythonProcess.stdin.write(JSON.stringify(data) + "\n");
+    pythonProcess.stdin.end();
+
+    let resultData = "";
+
+    const processPromise = new Promise((resolve, reject) => {
+      pythonProcess.stdout.on("data", (data) => {
+        resultData += data.toString();
+      });
+
+      pythonProcess.stdout.on("end", () => {
+        try {
+          const result = JSON.parse(resultData);
+          resolve(result);
+        } catch (error) {
+          console.error("Error parsing JSON from Python script:", error);
+          reject(new Error("Error parsing JSON from Python script"));
+        }
+      });
+
+      pythonProcess.on("error", (error) => {
+        console.error("Error with Python process:", error);
+        reject(new Error("Error with Python process"));
+      });
+    });
+
+    const result = await processPromise;
+    message.messageScore = result.final_score;
+    await message.save();
+
+    // 메시지 개수 확인
+    const messageCount = await Message.countDocuments({
+      sessionId: message.sessionId,
+    });
+
+    // 요약 실행 조건: 3번째 메시지 또는 7, 11, 15, ...번째 메시지일 때
+    if (
+      messageCount === 3 ||
+      (messageCount > 3 && (messageCount - 3) % 4 === 0)
+    ) {
+      try {
+        const summaryResult = await runSummaryModel(message.sessionId);
+        if (summaryResult.updated) {
+          await Session.findByIdAndUpdate(message.sessionId, {
+            sessionName: summaryResult.summary,
+          });
+          // console.log('Session summary updated:', summaryResult.summary);
+        }
+      } catch (summaryError) {
+        console.error("Error running summary model:", summaryError);
+      }
+    }
+  } catch (error) {
+    console.error("Error in calculateScoreAndUpdateSummary:", error);
+  }
+}
 
 app.post("/api/speech-to-text", upload.single("audio"), async (req, res) => {
   if (!req.file) {
