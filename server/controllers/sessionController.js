@@ -39,9 +39,9 @@ exports.getSession = async (req, res) => {
 }
 
 exports.getSessionDetails = async (req, res) => {
-  const { sessionid } = req.params;
+  const { sessionId } = req.params;
   try {
-    const session = await Session.findById(sessionid);
+    const session = await Session.findById(sessionId);
     if (!session) {
       return res.status(404).json({ message: "Session not found" });
     }
