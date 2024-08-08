@@ -26,11 +26,12 @@ def summarize_text_korean(text):
     inputs = tokenizer(text, return_tensors="pt", max_length=1024, truncation=True)
     summary_ids = model.generate(
         inputs["input_ids"],
-        max_length=150,
-        min_length=50,
-        length_penalty=2.0,
+        max_length=50,
+        min_length=10,
+        length_penalty=0.8,
         num_beams=4,
-        early_stopping=True
+        early_stopping=True,
+        no_repeat_ngram_size=2
     )
     summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
     return summary
@@ -48,24 +49,24 @@ def summarize_session(session_id):
     summary = summarize_text_korean(full_conversation)
     return summary
 
-def update_session_feedback(session_id, summary):
+def update_session_name(session_id, summary):
     sessions_collection.update_one(
         {"_id": ObjectId(session_id)},
-        {"$set": {"sessionFeedback": summary}}
+        {"$set": {"sessionName": summary}}
     )
-    print(f"Updated session {session_id} with summary: {summary}")
+    print(json.dumps({"updated": True, "summary": summary}, ensure_ascii=False))
 
 def check_and_summarize(session_id):
     messages = get_messages_by_session_id(session_id)
     if len(messages) > 3 and len(messages) % 4 == 0:
         summary = summarize_session(session_id)
-        update_session_feedback(session_id, summary)
+        update_session_name(session_id, summary)
         return summary
     return None
 
 def main():
     if len(sys.argv) != 2:
-        print(json.dumps({"error": "Session ID is required"}))
+        # print(json.dumps({"error": "Session ID is required"}))
         sys.exit(1)
 
     session_id = sys.argv[1]
@@ -75,7 +76,7 @@ def main():
             "summary": summary,
             "updated": summary is not None
         }
-        print(json.dumps(result, ensure_ascii=False))
+        # print(json.dumps(result, ensure_ascii=False))
     except Exception as e:
         print(json.dumps({"error": str(e)}))
 

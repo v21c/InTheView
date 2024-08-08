@@ -282,11 +282,14 @@ function runSummaryModel(sessionId) {
         });
 
         pythonProcess.on('close', (code) => {
-            console.log(`Python process exited with code ${code}`);
+            // console.log(`Python process exited with code ${code}`);
             try {
-                const result = JSON.parse(resultData);
+                const jsonObjects = resultData.trim().split('\n').filter(line => line.trim() !== '');
+                const lastJsonObject = jsonObjects[jsonObjects.length - 1];
+                const result = JSON.parse(lastJsonObject);
                 resolve(result);
             } catch (error) {
+                console.error('Error parsing Python output:', error, 'Raw output:', resultData);
                 reject(error);
             }
         });
@@ -314,8 +317,8 @@ app.post("/api/messages", async (req, res) => {
             try {
                 const summaryResult = await runSummaryModel(sessionId);
                 if (summaryResult.updated) {
-                    await Session.findByIdAndUpdate(sessionId, { sessionFeedback: summaryResult.summary });
-                    console.log('Session summary updated:', summaryResult.summary);
+                    await Session.findByIdAndUpdate(sessionId, {sessionName : summaryResult.summary });
+                    // console.log('Session summary updated:', summaryResult.summary);
                 }
             } catch (summaryError) {
                 console.error('Error running summary model:', summaryError);
@@ -431,8 +434,8 @@ async function calculateScoreAndUpdateSummary(message) {
             try {
                 const summaryResult = await runSummaryModel(message.sessionId);
                 if (summaryResult.updated) {
-                    await Session.findByIdAndUpdate(message.sessionId, {sessionFeedback: summaryResult.summary});
-                    console.log('Session summary updated:', summaryResult.summary);
+                    await Session.findByIdAndUpdate(message.sessionId, {sessionName: summaryResult.summary});
+                    // console.log('Session summary updated:', summaryResult.summary);
                 }
             } catch (summaryError) {
                 console.error('Error running summary model:', summaryError);
