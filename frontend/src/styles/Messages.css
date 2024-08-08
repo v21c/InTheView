@@ -36,11 +36,11 @@
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 15px 0 0 15px;
-  overflow: hidden; /* Default to hidden */
+  overflow: hidden;
   resize: none;
   box-sizing: border-box;
   min-height: 50px;
-  max-height: 200px; /* Set the maximum height */
+  max-height: 200px;
 }
 
 .interview-container {
@@ -56,7 +56,7 @@
 }
 
 .message-question,
-.message-answer {
+.message-answer-container {
   margin: 0 20px 10px 20px;
   width: 70%;
   max-width: fit-content;
@@ -72,10 +72,25 @@
   margin-right: auto;
 }
 
-.message-answer {
+.message-answer-container {
   text-align: left;
   background-color: #16152d;
   margin-left: auto;
+  margin-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.message-answer {
+  width: 100%;
+}
+
+.message-score {
+  font-size: 0.8em;
+  color: #aaaaaa;
+  margin-top: 4px;
+  align-self: flex-end;
 }
 
 .submission {

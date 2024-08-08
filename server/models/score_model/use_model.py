@@ -11,7 +11,8 @@ import numpy as np
 import sys
 import json
 
-load_dotenv()
+env_path = os.path.join(os.path.dirname(__file__), '../../.env')
+load_dotenv(dotenv_path=env_path)
 openai.api_key = os.getenv("OPENAI_API_KEY")
 script_dir = os.path.dirname(os.path.abspath(__file__))
 model_file = os.path.join(script_dir, "scored_model_bert_cpu.joblib")
@@ -64,7 +65,7 @@ def get_detailed_score(question, answer):
     실용성: [점수]
     """
     completion = openai.chat.completions.create(
-        model='gpt-4',
+        model='gpt-4o',
         messages=[
             {"role": "system", "content": "당신은 전문 면접 평가자입니다."},
             {"role": "user", "content": prompt}

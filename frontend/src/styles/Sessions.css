@@ -57,9 +57,7 @@
   border-radius: 15px;
   text-align: left;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: relative;
+  flex-direction: column;
   background-color: var(--background-color-default);
 }
 
@@ -70,6 +68,26 @@
 
 .session input {
   height: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.session-name-container {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  word-break: break-word;
+}
+
+.session-name {
+  white-space: pre-wrap;
+}
+
+.session-options-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 0.5em;
 }
 
 .session-options {

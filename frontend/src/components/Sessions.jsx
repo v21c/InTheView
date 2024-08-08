@@ -75,6 +75,15 @@ const Sessions = ({
     }
   };
 
+  // 일정 간격마다 세션 목록을 업데이트하는 useEffect 추가
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchSessions();
+    }, 5000); // 5초마다 세션 목록 업데이트
+
+    return () => clearInterval(intervalId); // 컴포넌트 언마운트 시 interval 정리
+  }, []);
+
   const createSession = async () => {
     try {
       const response = await axios.post("http://localhost:5000/api/sessions", {
@@ -86,7 +95,7 @@ const Sessions = ({
         sessionFeedback: "",
       });
       console.log("Session created:", response.data);
-      fetchSessions();
+      fetchSessions(); // 세션 생성 후 세션 목록 다시 불러오기
     } catch (error) {
       console.error("Error creating session:", error);
     }
@@ -109,7 +118,7 @@ const Sessions = ({
         sessionName: trimmedSessionName,
       });
       console.log("Session renamed:", trimmedSessionName);
-      fetchSessions();
+      fetchSessions(); // 세션 이름 변경 후 세션 목록 다시 불러오기
       setEditingSessionId(null);
       setNewSessionName("");
       setShowOptions(null);
@@ -123,20 +132,7 @@ const Sessions = ({
     try {
       await axios.delete(`http://localhost:5000/api/sessions/${sessionId}`);
       console.log("Session deleted:", sessionId);
-      const response = await axios.get("http://localhost:5000/api/sessions", {
-        params: { userId: user.uid },
-      });
-      const updatedSessions = response.data;
-      setSessions(updatedSessions);
-      if (updatedSessions.length > 0) {
-        setSelectedSessionId(updatedSessions[0]._id);
-        setSelectedSession(updatedSessions[0]._id);
-      } else {
-        setSelectedSessionId(null);
-        setSelectedSession(null);
-      }
-      setShowOptions(null);
-      setOptionsVisibleFor(null);
+      fetchSessions(); // 세션 삭제 후 세션 목록 다시 불러오기
     } catch (error) {
       console.error("Error deleting session:", error);
     }
@@ -198,59 +194,55 @@ const Sessions = ({
                 }`}
                 onClick={() => handleSessionClick(session._id)}
               >
-                {editingSessionId === session._id ? (
-                  <input
-                    type="text"
-                    ref={inputRef}
-                    value={newSessionName}
-                    onChange={(e) => setNewSessionName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleRenameSession(session._id);
-                      }
-                    }}
-                    placeholder="Enter new session name"
-                    onBlur={cancelRenameSession}
+                <div className="session-name-container">
+                  {editingSessionId === session._id ? (
+                    <input
+                      type="text"
+                      ref={inputRef}
+                      value={newSessionName}
+                      onChange={(e) => setNewSessionName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleRenameSession(session._id);
+                        }
+                      }}
+                      placeholder="Enter new session name"
+                      onBlur={cancelRenameSession}
+                    />
+                  ) : (
+                    <span className="session-name">{session.sessionName}</span>
+                  )}
+                </div>
+                <div
+                  className={`session-options-container ${
+                    showOptions === session._id ? "hovered" : ""
+                  }`}
+                >
+                  <img
+                    src={icon_options}
+                    alt="options"
+                    className="session-options"
+                    onClick={(event) => toggleOptions(session._id, event)}
                   />
-                ) : (
-                  <>
-                    <span>{session.sessionName}</span>
+                  {showOptions === session._id && (
                     <div
-                      className={`session-options-container ${
-                        showOptions === session._id ? "hovered" : ""
-                      }`}
+                      className="options-box"
+                      ref={optionsRef}
+                      onClick={(event) => event.stopPropagation()}
                     >
-                      <img
-                        src={icon_options}
-                        alt="options"
-                        className="session-options"
-                        onClick={(event) => toggleOptions(session._id, event)}
-                      />
-                      {showOptions === session._id && (
-                        <div
-                          className="options-box"
-                          ref={optionsRef}
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          <button
-                            onClick={(event) =>
-                              startRenameSession(session, event)
-                            }
-                          >
-                            Rename
-                          </button>
-                          <button
-                            onClick={(event) =>
-                              handleDeleteSession(session._id)
-                            }
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
+                      <button
+                        onClick={(event) => startRenameSession(session, event)}
+                      >
+                        Rename
+                      </button>
+                      <button
+                        onClick={(event) => handleDeleteSession(session._id)}
+                      >
+                        Delete
+                      </button>
                     </div>
-                  </>
-                )}
+                  )}
+                </div>
               </div>
             ))}
           </div>

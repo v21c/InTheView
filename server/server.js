@@ -338,39 +338,13 @@ app.post("/api/messages", async (req, res) => {
       sessionId,
       question,
       answer,
-      messageScore,
+      messageScore: 0, // 초기 점수를 0으로 설정
     });
 
     await newMessage.save();
-
-    // 즉시 응답 보내기
     res.status(201).json(newMessage);
-
-    // 비동기적으로 점수 계산 및 요약 처리
-    calculateScoreAndUpdateSummary(newMessage);
   } catch (error) {
     console.error("Error creating message:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-app.put("/api/messages/:messageId", async (req, res) => {
-  const { messageId } = req.params;
-  const { answer } = req.body;
-
-  try {
-    const message = await Message.findById(messageId);
-
-    if (!message) {
-      return res.status(404).json({ message: "Message not found" });
-    }
-
-    message.answer = answer;
-    await message.save();
-
-    res.status(200).json(message);
-  } catch (error) {
-    console.error("Error updating message:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -426,6 +400,7 @@ app.put("/api/messages/:messageId", async (req, res) => {
       console.error("Message not found:", messageId);
       return res.status(404).json({ message: "Message not found" });
     }
+
     message.answer = answer;
     await message.save();
 
@@ -440,6 +415,7 @@ app.put("/api/messages/:messageId", async (req, res) => {
   }
 });
 
+// 점수 계산 및 요약 처리 함수
 async function calculateScoreAndUpdateSummary(message) {
   try {
     // 점수 계산 로직

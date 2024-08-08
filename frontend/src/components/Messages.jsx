@@ -16,6 +16,7 @@ const Messages = ({
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const messagesEndRef = useRef(null);
+  const [latestScore, setLatestScore] = useState("score: ...");
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -48,6 +49,38 @@ const Messages = ({
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  // 실시간으로 점수 업데이트를 감지하는 useEffect 추가
+  useEffect(() => {
+    const intervalId = setInterval(async () => {
+      if (selectedSession) {
+        try {
+          const response = await axios.get(
+            "http://localhost:5000/api/messages",
+            { params: { sessionId: selectedSession } }
+          );
+          const fetchedMessages = response.data;
+          setMessages(fetchedMessages);
+
+          const latestMessage = fetchedMessages[fetchedMessages.length - 1];
+          if (
+            latestMessage.answer.trim() !== "" &&
+            latestMessage.messageScore !== 0
+          ) {
+            setLatestScore(
+              latestMessage.messageScore === 0
+                ? "score: ..."
+                : `score: ${latestMessage.messageScore.toFixed(1)}`
+            );
+          }
+        } catch (error) {
+          console.error("Error fetching messages:", error);
+        }
+      }
+    }, 5000); // 5초마다 업데이트 확인
+
+    return () => clearInterval(intervalId); // 컴포넌트 언마운트 시 interval 정리
+  }, [selectedSession]);
 
   const updateMessage = async (messageId, answer) => {
     try {
@@ -216,11 +249,20 @@ const Messages = ({
           Selected Session: {selectedSession}
         </div>
         <div className="messages">
-          {messages.map((message) => (
+          {messages.map((message, index) => (
             <div key={message._id} className="message">
               <div className="message-question">{message.question}</div>
               {message.answer.trim() !== "" && (
-                <div className="message-answer">{message.answer}</div>
+                <div className="message-answer-container">
+                  <div className="message-answer">{message.answer}</div>
+                  <div className="message-score">
+                    {index === messages.length - 1
+                      ? latestScore
+                      : message.messageScore === 0
+                      ? "score: ..."
+                      : `score: ${message.messageScore.toFixed(1)}`}
+                  </div>
+                </div>
               )}
             </div>
           ))}
